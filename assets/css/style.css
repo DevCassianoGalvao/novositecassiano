@@ -949,3 +949,6 @@ button,input,select{font:inherit;color:inherit}
   .flow .node:nth-child(2),.flow .node:nth-child(3){--x:29%!important}
   .flow .node:nth-child(5),.flow .node:nth-child(6){--x:71%!important}
 }
+.footer__wa svg{width:21px;fill:#fff;stroke:none}
+.footer__wa:hover{background:var(--verde);border-color:var(--verde)}
+.footer__wa:hover svg{fill:#03140D}
