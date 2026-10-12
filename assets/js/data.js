@@ -37,6 +37,8 @@ window.SITE_DATA = {
   depoimentos: [
     { nome: '[NOME DO CLIENTE]', empresa: '[EMPRESA]', frase: '[Frase de uma linha tirada do próprio vídeo]', youtube: '' },
     { nome: '[NOME DO CLIENTE]', empresa: '[EMPRESA]', frase: '[Frase de uma linha tirada do próprio vídeo]', youtube: '' },
+    { nome: '[NOME DO CLIENTE]', empresa: '[EMPRESA]', frase: '[Frase de uma linha tirada do próprio vídeo]', youtube: '' },
+    { nome: '[NOME DO CLIENTE]', empresa: '[EMPRESA]', frase: '[Frase de uma linha tirada do próprio vídeo]', youtube: '' },
     { nome: '[NOME DO CLIENTE]', empresa: '[EMPRESA]', frase: '[Frase de uma linha tirada do próprio vídeo]', youtube: '' }
   ]
 };
