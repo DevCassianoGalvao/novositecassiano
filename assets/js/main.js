@@ -423,6 +423,20 @@
     if (fab && cta) fab.classList.toggle('is-on', y > window.innerHeight * 0.9 && cta.getBoundingClientRect().top > window.innerHeight * 0.6);
   }
   window.addEventListener('scroll', onScroll, { passive: true });
+  /* menu: item ativo conforme a seção na tela */
+  var navLinks = $$('.nav__links a');
+  if ('IntersectionObserver' in window && navLinks.length) {
+    var spy = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        navLinks.forEach(function (l) { l.classList.toggle('is-active', l.getAttribute('href') === '#' + en.target.id); });
+      });
+    }, { rootMargin: '-45% 0px -50% 0px' });
+    navLinks.forEach(function (l) { var t = document.querySelector(l.getAttribute('href')); if (t) spy.observe(t); });
+    var topSpy = new IntersectionObserver(function (entries) { if (entries[0].isIntersecting) navLinks.forEach(function (l) { l.classList.remove('is-active'); }); }, { rootMargin: '-45% 0px -50% 0px' });
+    var heroEl = document.getElementById('topo'); if (heroEl) topSpy.observe(heroEl);
+    navLinks.forEach(function (l) { l.addEventListener('click', function () { navLinks.forEach(function (o) { o.classList.toggle('is-active', o === l); }); }); });
+  }
   onScroll();
 
   /* =========================================================

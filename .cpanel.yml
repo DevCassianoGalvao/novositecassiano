@@ -1,0 +1,14 @@
+---
+# Deploy do site no cPanel (Git Version Control > Deploy HEAD Commit).
+# Copia SÓ os arquivos do site para a pasta do domínio, sem apagar nada que já exista lá
+# (as outras pastas do domínio ficam intactas).
+#
+# AJUSTE O CAMINHO ABAIXO se a pasta do domínio for outra
+# (veja em cPanel > Domínios > "Raiz do documento" de cassianogalvao.com.br).
+deployment:
+  tasks:
+    - export DEPLOYPATH=$HOME/cassianogalvao.com.br/
+    - /bin/mkdir -p $DEPLOYPATH
+    - /bin/cp -f index.html robots.txt sitemap.xml .htaccess $DEPLOYPATH
+    - /bin/cp -Rf assets $DEPLOYPATH
+    - /bin/cp -Rf api $DEPLOYPATH

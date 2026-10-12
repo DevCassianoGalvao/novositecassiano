@@ -17,6 +17,9 @@ api/lead.php          recebe o formulário e envia o e-mail pela Brevo
 
 ## Publicar no servidor
 
+Passo a passo com Git no cPanel: veja **DEPLOY.md**.
+
+
 1. Envie todos os arquivos para a pasta pública do domínio (ex.: `public_html`).
 2. Copie `.env.example` para `.env` e preencha:
    - `BREVO_API_KEY`: Brevo > SMTP & API > API Keys
