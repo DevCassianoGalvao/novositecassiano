@@ -937,3 +937,15 @@ button,input,select{font:inherit;color:inherit}
 .draw__chip--ok svg{width:14px;fill:none;stroke:#03140D;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
 @keyframes okPop{0%,80%{opacity:0;transform:scale(.6)}84%,94%{opacity:1;transform:scale(1)}98%,100%{opacity:0;transform:scale(.8)}}
 @media (max-width:1000px){.about__deco{min-height:0;padding:30px 24px 0}.draw{max-width:360px}.draw__chip--type{right:-14px}.draw__chip--pal{left:-16px}.draw__chip--ok{left:-10px}}
+/* mobile: abas da galeria viram pontinhos; fluxo de IA cabe no quadro */
+@media (max-width:720px){
+  .gal__bar{bottom:10px;gap:6px;padding:6px 8px}
+  .gal__dot{font-size:0;width:8px;height:8px;padding:0;border-radius:999px;background:rgba(255,255,255,.35);transition:width .3s,background .3s}
+  .gal__dot.is-on{width:22px;background:var(--verde)}
+  .flow{aspect-ratio:1/1}
+  .node{font-size:11px;padding:7px 9px;gap:6px}
+  .node i{width:6px;height:6px}
+  .node--core{font-size:12.5px;padding:10px 13px}
+  .flow .node:nth-child(2),.flow .node:nth-child(3){--x:29%!important}
+  .flow .node:nth-child(5),.flow .node:nth-child(6){--x:71%!important}
+}
