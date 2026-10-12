@@ -45,7 +45,7 @@
     [['x', '  '], ['t', '</a>']],
     [['t', '</section>']],
     [],
-    [['t', '<script>'], ['x', ' gsap.'], ['v', 'from'], ['x', '(".hero", { y: 40 })'], ['t', '</script>']]
+    [['t', '<' + 'script>'], ['x', ' gsap.'], ['v', 'from'], ['x', '(".hero", { y: 40 })'], ['t', '<' + '/script>']]
   ];
   var codeEl = $('#codeLines'), codeTimer = null;
   function typeCode() {
@@ -119,6 +119,8 @@
       layers.forEach(function (l, k) { l.classList.toggle('is-on', k === i || (i === 3 && k === 2)); });
       if (bar) bar.style.width = ((i + 1) / 4 * 100) + '%';
       process.classList.toggle('is-live', i === 3);
+      process.setAttribute('data-step', i);
+      $$('.pv-ic', process).forEach(function (ic, k) { ic.classList.toggle('is-on', k === i); });
     };
     showStep(0);
     stepsEl.forEach(function (s, k) { s.addEventListener('click', function () { showStep(k); }); });
@@ -456,6 +458,26 @@
   mm.add('(max-width: 1000px)', function () {
     ScrollTrigger.create({ trigger: '#processo', start: 'top 70%', once: true, onEnter: startAutoProcess });
   });
+
+  /* ---------- ilustração do processo: inclinação e profundidade com o mouse ---------- */
+  if (finePointer) {
+    var pvWrap = $('.process__vis');
+    if (pvWrap) {
+      var rx = gsap.quickTo('.pv', 'rotationX', { duration: .8, ease: 'power3' });
+      var ry = gsap.quickTo('.pv', 'rotationY', { duration: .8, ease: 'power3' });
+      gsap.set('.pv', { transformPerspective: 1200 });
+      var deep = $$('.pv-ic, .pv-cursor').map(function (el, k) {
+        return { x: gsap.quickTo(el, 'x', { duration: 1, ease: 'power3' }), y: gsap.quickTo(el, 'y', { duration: 1, ease: 'power3' }), d: el.classList.contains('pv-cursor') ? 6 : 16 + k * 4 };
+      });
+      pvWrap.addEventListener('pointermove', function (e) {
+        var r = pvWrap.getBoundingClientRect();
+        var nx = (e.clientX - r.left) / r.width - .5, ny = (e.clientY - r.top) / r.height - .5;
+        ry(nx * 10); rx(ny * -8);
+        deep.forEach(function (o) { o.x(nx * o.d); o.y(ny * o.d); });
+      });
+      pvWrap.addEventListener('pointerleave', function () { rx(0); ry(0); deep.forEach(function (o) { o.x(0); o.y(0); }); });
+    }
+  }
 
   /* ---------- sobre e CTA ---------- */
   gsap.to('.about__spark', { rotate: 180, ease: 'none', scrollTrigger: { trigger: '#sobre', start: 'top bottom', end: 'bottom top', scrub: true } });

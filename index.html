@@ -70,8 +70,9 @@
       </p>
 
       <h1 class="hero__title" aria-label="Sua empresa é melhor do que parece na internet. Eu resolvo isso.">
-        <span class="hero__line" aria-hidden="true"><span class="w">SUA</span> <span class="w">EMPRESA</span> <span class="w">É</span> <span class="w hero__big">MELHOR</span></span>
-        <span class="hero__line" aria-hidden="true"><span class="w">DO</span> <span class="w">QUE</span> <span class="w">PARECE</span> <span class="w">NA</span> <span class="w">INTERNET.</span></span>
+        <span class="hero__line" aria-hidden="true"><span class="w">SUA</span> <span class="w">EMPRESA</span> <span class="w">É</span></span>
+        <span class="hero__line" aria-hidden="true"><span class="w hero__big">MELHOR</span> <span class="w">DO</span> <span class="w">QUE</span> <span class="w">PARECE</span></span>
+        <span class="hero__line" aria-hidden="true"><span class="w">NA</span> <span class="w">INTERNET.</span></span>
         <span class="hero__pill" aria-hidden="true"><span class="thin">EU</span>&nbsp;RESOLVO ISSO.</span>
       </h1>
 
@@ -111,8 +112,8 @@
 <!-- Faixa -->
 <div class="marquee" aria-hidden="true">
   <div class="marquee__track">
-    <span>SITES INSTITUCIONAIS</span><b>✦</b><span>LANDING PAGES</span><b>✦</b><span>APRESENTAÇÕES</span><b>✦</b><span>CARROSSÉIS</span><b>✦</b><span>VÍDEOS ANIMADOS</span><b>✦</b><span>AUTOMAÇÕES COM IA</span><b>✦</b><span>SISTEMAS SOB MEDIDA</span><b>✦</b>
-    <span>SITES INSTITUCIONAIS</span><b>✦</b><span>LANDING PAGES</span><b>✦</b><span>APRESENTAÇÕES</span><b>✦</b><span>CARROSSÉIS</span><b>✦</b><span>VÍDEOS ANIMADOS</span><b>✦</b><span>AUTOMAÇÕES COM IA</span><b>✦</b><span>SISTEMAS SOB MEDIDA</span><b>✦</b>
+    <span>SITES INSTITUCIONAIS</span><svg class="mq-spk" viewBox="0 0 100 100"><use href="#spk"/></svg><span>LANDING PAGES</span><svg class="mq-spk spk-g" viewBox="0 0 100 100"><use href="#spk"/></svg><span>APRESENTAÇÕES</span><svg class="mq-spk" viewBox="0 0 100 100"><use href="#spk"/></svg><span>CARROSSÉIS</span><svg class="mq-spk spk-g" viewBox="0 0 100 100"><use href="#spk"/></svg><span>VÍDEOS ANIMADOS</span><svg class="mq-spk" viewBox="0 0 100 100"><use href="#spk"/></svg><span>AUTOMAÇÕES COM IA</span><svg class="mq-spk spk-g" viewBox="0 0 100 100"><use href="#spk"/></svg><span>SISTEMAS SOB MEDIDA</span><svg class="mq-spk" viewBox="0 0 100 100"><use href="#spk"/></svg>
+    <span>SITES INSTITUCIONAIS</span><svg class="mq-spk spk-g" viewBox="0 0 100 100"><use href="#spk"/></svg><span>LANDING PAGES</span><svg class="mq-spk" viewBox="0 0 100 100"><use href="#spk"/></svg><span>APRESENTAÇÕES</span><svg class="mq-spk spk-g" viewBox="0 0 100 100"><use href="#spk"/></svg><span>CARROSSÉIS</span><svg class="mq-spk" viewBox="0 0 100 100"><use href="#spk"/></svg><span>VÍDEOS ANIMADOS</span><svg class="mq-spk spk-g" viewBox="0 0 100 100"><use href="#spk"/></svg><span>AUTOMAÇÕES COM IA</span><svg class="mq-spk" viewBox="0 0 100 100"><use href="#spk"/></svg><span>SISTEMAS SOB MEDIDA</span><svg class="mq-spk spk-g" viewBox="0 0 100 100"><use href="#spk"/></svg>
   </div>
 </div>
 
@@ -257,7 +258,7 @@
 </section>
 
 <!-- ============ PROCESSO (substitui o antes x depois) ============ -->
-<section class="section process" id="processo">
+<section class="section process" id="processo" data-step="0">
   <div class="wrap">
     <div class="process__pin" id="processPin">
       <div class="process__text">
@@ -300,12 +301,20 @@
               </div>
               <div class="dz__cols"><i></i><i></i><i></i></div>
             </div>
+            <svg class="pv-cursor" viewBox="0 0 24 24"><path d="M5 3l14 7-6 2-2 6z"/></svg>
             <!-- 04 no ar -->
             <div class="pv__l pv-4">
+              <svg class="pv-spk" style="--x:62%;--y:28%;--d:0s" viewBox="0 0 100 100"><use href="#spk"/></svg>
+              <svg class="pv-spk pv-spk--g" style="--x:84%;--y:18%;--d:.4s" viewBox="0 0 100 100"><use href="#spk"/></svg>
+              <svg class="pv-spk" style="--x:76%;--y:46%;--d:.8s" viewBox="0 0 100 100"><use href="#spk"/></svg>
               <div class="toast"><span><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span><div><b>Site publicado</b><small>suaempresa.com.br está no ar</small></div></div>
             </div>
           </div>
         </div>
+        <span class="pv-ic pv-ic--1 is-on" title="Estratégia"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" class="f"/></svg></span>
+        <span class="pv-ic pv-ic--2" title="Estrutura"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 9v12"/></svg></span>
+        <span class="pv-ic pv-ic--3" title="Design"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.9 1.2-1.8-.6-1.3.3-2.7 1.7-2.7H17a4 4 0 0 0 4-4c0-5-4-9.5-9-9.5z"/><circle cx="7.5" cy="11" r="1.2" class="f"/><circle cx="10.5" cy="7" r="1.2" class="f"/><circle cx="15" cy="7.5" r="1.2" class="f"/></svg></span>
+        <span class="pv-ic pv-ic--4" title="No ar"><svg viewBox="0 0 24 24"><path d="M5 15c-1.5 1.3-2 4-2 6 2 0 4.7-.5 6-2"/><path d="M14 4c3-1.5 6-1 6-1s.5 3-1 6l-6 6-5-5z"/><circle cx="15.5" cy="8.5" r="1.4"/></svg></span>
         <div class="pv__progress"><span id="pvBar"></span></div>
       </div>
     </div>
