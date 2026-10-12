@@ -796,3 +796,21 @@ button,input,select{font:inherit;color:inherit}
 .mslider__nav{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
 @media (max-width:1000px){.mslider__track .work{flex-basis:calc((100% - 18px) / 2)}}
 @media (max-width:720px){.works__grid{grid-template-columns:1fr}.mslider__track .work{flex-basis:72%}.mslider__nav{justify-content:center}}
+
+/* fonte manuscrita: mais fina e em mais pontos */
+.eyebrow{font-family:var(--f-hand);font-weight:500;font-size:27px;letter-spacing:0;text-transform:none;line-height:1;gap:10px;margin-bottom:10px}
+.eyebrow::before{width:14px;height:14px}
+.svc__tag{font-family:var(--f-hand);font-weight:500;font-size:27px;letter-spacing:0;color:var(--verde);line-height:1}
+.svc__tag span{font-family:var(--f-mono);font-size:13px;font-weight:700;letter-spacing:.1em}
+.hero__big{font-family:var(--f-hand);font-weight:600;text-transform:none;font-size:1.55em;line-height:.7;letter-spacing:-.01em;padding-right:.06em;vertical-align:-.04em}
+.hand{font-weight:500}
+.hand-note{font-weight:500}
+.testi__name{font-weight:500}
+.form__q{font-family:var(--f-hand);font-weight:500;font-size:30px;line-height:1.05;text-transform:none;letter-spacing:0;color:var(--verde)}
+
+.work--v{cursor:pointer}
+.work--v .work__meta{padding-top:12px}
+.work--v .work__name{font-size:1.05rem}
+.work.is-sound .work__play{background:#fff}
+.work.is-sound .work__play svg{display:none}
+.work.is-sound .work__play::before{content:"";width:12px;height:14px;border-left:4px solid #03140D;border-right:4px solid #03140D}

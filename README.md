@@ -34,10 +34,17 @@ api/lead.php          recebe o formulário e envia o e-mail pela Brevo
    "Oi, Cassiano! Sou [nome], da [@instagram]. Vim pelo site e [preciso de um site]."
    Se o e-mail falhar, o redirecionamento acontece mesmo assim (o lead não se perde).
 
+## Vídeos
+
+- `assets/video/motion/`: reels de sites e de campanha, otimizados em 540x960 (H.264, CRF 30, áudio 64k, faststart) com capa `.webp`.
+- `assets/video/depoimento-weslen-ruiz.mp4`: depoimento hospedado no site (720x1280).
+- Para adicionar um vídeo novo:
+  `ffmpeg -i entrada.mp4 -vf "scale=540:960,fps=30,format=yuv420p" -c:v libx264 -preset slow -crf 30 -movflags +faststart -c:a aac -b:a 64k saida.mp4`
+  e cadastre em `assets/js/data.js` (cat: 'motion').
+
 ## Pendências de conteúdo (placeholders)
 
 Tudo em `assets/js/data.js`:
 
-- **Portfólio / Sites e Sistemas:** prints (16:10, `.webp`) e links dos sites no ar. Os cards de Ana Rangel, Navi, Painel de marketplaces e Copa Brasil de Talentos são rascunhos da copy.
-- **Portfólio / Motion:** vídeos `.mp4` verticais dos Reels de apresentação + capa.
-- **Depoimentos:** IDs ou links do YouTube, nome, empresa e uma frase tirada do próprio vídeo.
+- **Portfólio / Sistemas:** prints do painel de marketplaces e da Copa Brasil de Talentos (ou esconder a aba).
+- **Depoimentos:** frase de uma linha de cada vídeo (opcional).

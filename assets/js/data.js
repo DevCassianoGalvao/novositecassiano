@@ -31,11 +31,20 @@ window.SITE_DATA = {
     { cat: 'sistemas', destaque: true, tipo: 'Painel sob medida', nome: 'Painel de métricas para marketplaces', desc: 'Quanto cada conta realmente fatura, num painel só.', img: '', url: '', placeholder: true },
     { cat: 'sistemas', destaque: true, tipo: 'Portal + painel admin', nome: 'Copa Brasil de Talentos', desc: 'Portal público + painel para gerenciar o torneio inteiro.', img: '', url: '', placeholder: true },
 
-    // Motion: vídeos verticais 9:16 (video = .mp4 otimizado, poster = capa .webp)
-    { cat: 'motion', tipo: 'Reel de apresentação', nome: '[CLIENTE]', desc: 'Vídeo vertical apresentando o site.', video: '', poster: '', placeholder: true },
-    { cat: 'motion', tipo: 'Reel de apresentação', nome: '[CLIENTE]', desc: 'Vídeo vertical apresentando o site.', video: '', poster: '', placeholder: true },
-    { cat: 'motion', tipo: 'Reel de apresentação', nome: '[CLIENTE]', desc: 'Vídeo vertical apresentando o site.', video: '', poster: '', placeholder: true },
-    { cat: 'motion', tipo: 'Reel de apresentação', nome: '[CLIENTE]', desc: 'Vídeo vertical apresentando o site.', video: '', poster: '', placeholder: true }
+    // Motion: vídeos verticais 9:16 otimizados (540x960). Ordem: sites primeiro, campanhas depois.
+    { cat: 'motion', tipo: 'Reel de site', nome: 'Congressis', video: 'assets/video/motion/reel-congressis.mp4', poster: 'assets/video/motion/reel-congressis.webp' },
+    { cat: 'motion', tipo: 'Reel de site', nome: 'Ana Rangel Arquitetura', video: 'assets/video/motion/reel-ana-rangel.mp4', poster: 'assets/video/motion/reel-ana-rangel.webp' },
+    { cat: 'motion', tipo: 'Reel de site', nome: 'Vereador Maicon Gonçalves', video: 'assets/video/motion/reel-maicon-goncalves.mp4', poster: 'assets/video/motion/reel-maicon-goncalves.webp' },
+    { cat: 'motion', tipo: 'Reel de site', nome: 'Dr. André Luiz Nogueira', video: 'assets/video/motion/reel-andre-nogueira.mp4', poster: 'assets/video/motion/reel-andre-nogueira.webp' },
+    { cat: 'motion', tipo: 'Reel de site', nome: 'Lamparina Hub', video: 'assets/video/motion/reel-lamparina-hub.mp4', poster: 'assets/video/motion/reel-lamparina-hub.webp' },
+    { cat: 'motion', tipo: 'Reel de site', nome: 'Navi Occupational Therapy', video: 'assets/video/motion/reel-navi-ot.mp4', poster: 'assets/video/motion/reel-navi-ot.webp' },
+    { cat: 'motion', tipo: 'Campanha', nome: 'Luiz Lima e Welbert Pedro', video: 'assets/video/motion/campanha-estilo-minecraft.mp4', poster: 'assets/video/motion/campanha-estilo-minecraft.webp' },
+    { cat: 'motion', tipo: 'Campanha', nome: 'Não esquece', video: 'assets/video/motion/campanha-nao-esquece.mp4', poster: 'assets/video/motion/campanha-nao-esquece.webp' },
+    { cat: 'motion', tipo: 'Campanha · vídeo com IA', nome: 'Welbert Pedro', video: 'assets/video/motion/campanha-welbert-ia.mp4', poster: 'assets/video/motion/campanha-welbert-ia.webp' },
+    { cat: 'motion', tipo: 'Campanha', nome: 'Conversa no WhatsApp', video: 'assets/video/motion/campanha-whatsapp.mp4', poster: 'assets/video/motion/campanha-whatsapp.webp' },
+    { cat: 'motion', tipo: 'Campanha', nome: 'A colinha', video: 'assets/video/motion/campanha-colinha.mp4', poster: 'assets/video/motion/campanha-colinha.webp' },
+    { cat: 'motion', tipo: 'Campanha', nome: 'Luiz Lima · 3030', video: 'assets/video/motion/campanha-luiz-lima.mp4', poster: 'assets/video/motion/campanha-luiz-lima.webp' },
+    { cat: 'motion', tipo: 'Campanha', nome: 'Welbert Pedro · 30300', video: 'assets/video/motion/campanha-welbert-pedro.mp4', poster: 'assets/video/motion/campanha-welbert-pedro.webp' }
   ],
 
   /* ---------- DEPOIMENTOS ----------

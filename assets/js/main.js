@@ -150,7 +150,7 @@
     return '<article class="work glass spot' + (isMotion ? ' work--v' : '') + '">' +
       '<div class="work__shot">' + shot + (isMotion ? '<span class="work__play" aria-hidden="true">' + PLAY + '</span>' : '') + '</div>' +
       '<div class="work__meta"><div><span class="work__kind">' + esc(p.tipo) + '</span>' +
-      '<h3 class="work__name">' + esc(p.nome) + '</h3><p class="work__desc">' + esc(p.desc) + '</p></div>' + go + '</div></article>';
+      '<h3 class="work__name">' + esc(p.nome) + '</h3>' + (p.desc ? '<p class="work__desc">' + esc(p.desc) + '</p>' : '') + '</div>' + go + '</div></article>';
   }
   var works = $('#works');
   var LINK = '<svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg>';
@@ -178,8 +178,13 @@
     $$('video', works).forEach(function (v) {
       var card = v.closest('.work');
       card.addEventListener('mouseenter', function () { v.play().catch(function () {}); });
-      card.addEventListener('mouseleave', function () { v.pause(); });
-      card.addEventListener('click', function () { v.paused ? v.play().catch(function () {}) : v.pause(); });
+      card.addEventListener('mouseleave', function () { if (v.muted) v.pause(); });
+      card.addEventListener('click', function () {
+        if (v.muted || v.paused) {
+          $$('video', works).forEach(function (o) { if (o !== v) { o.pause(); o.muted = true; o.closest('.work').classList.remove('is-sound'); } });
+          v.muted = false; v.play().catch(function () {}); card.classList.add('is-sound');
+        } else { v.pause(); card.classList.remove('is-sound'); }
+      });
     });
     var mt = $('.mslider__track', works);
     if (mt) {
