@@ -775,3 +775,24 @@ button,input,select{font:inherit;color:inherit}
 .hand-note svg{display:block;width:70px;margin:6px 0 0 70px;fill:none;stroke:var(--verde);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;transform:scaleX(-1)}
 @media (max-width:1180px){.hand-note{display:none}}
 .testi__name{font-family:var(--f-hand);font-weight:700;font-size:1.9rem;line-height:1;color:var(--verde);padding:4px 8px 2px}
+
+/* portfólio: destaques, lista e slider de motion */
+.works{display:block}
+.works__grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+.work__shot img{object-position:top center}
+.more{margin-top:20px;padding:20px 22px;border-radius:var(--r-lg);border:1px solid var(--line);background:rgba(255,255,255,.025)}
+.more__title{margin:0 0 12px;font-family:var(--f-mono);font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.more__list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.more__list a{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.03);transition:border-color .3s,background .3s,transform .35s var(--ease)}
+.more__list a span{min-width:0}
+.more__list b{display:block;font-size:15px;line-height:1.2}
+.more__list small{display:block;font-size:12.5px;color:var(--muted)}
+.more__list svg{flex:none;width:16px;fill:none;stroke:var(--verde);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;transition:transform .35s var(--ease)}
+.more__list a:hover{border-color:rgba(167,95,255,.5);background:rgba(137,40,255,.1);transform:translateY(-2px)}
+.more__list a:hover svg{transform:translate(2px,-2px)}
+.mslider__track{display:flex;gap:18px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;scrollbar-width:none;padding-bottom:4px}
+.mslider__track::-webkit-scrollbar{display:none}
+.mslider__track .work{flex:0 0 calc((100% - 54px) / 4);scroll-snap-align:start}
+.mslider__nav{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
+@media (max-width:1000px){.mslider__track .work{flex-basis:calc((100% - 18px) / 2)}}
+@media (max-width:720px){.works__grid{grid-template-columns:1fr}.mslider__track .work{flex-basis:72%}.mslider__nav{justify-content:center}}
