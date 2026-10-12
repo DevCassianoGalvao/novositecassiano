@@ -168,7 +168,7 @@ $text = "Novo lead pelo site\n\nNome: $nome\nWhatsApp: $whatsapp ($waLink)\nInst
 $payload = [
     'sender'      => ['name' => env('MAIL_FROM_NAME', 'Site Cassiano Galvão'), 'email' => env('MAIL_FROM', $to)],
     'to'          => [['email' => $to, 'name' => env('MAIL_TO_NAME', 'Cassiano Galvão')]],
-    'subject'     => "Novo lead: $nome · $label",
+    'subject'     => env('MAIL_SUBJECT', 'Novo contato vindo do site!'),
     'htmlContent' => $html,
     'textContent' => $text,
     'tags'        => ['lead-site'],

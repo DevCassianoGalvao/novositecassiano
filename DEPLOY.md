@@ -16,7 +16,11 @@ index.html  robots.txt  sitemap.xml  .htaccess  assets/  api/
    `index.html`, `script.js`, `styles.css`, `portfolio-auto.json`, `portfolio-data.js` e, se quiser, a pasta `Materiais para o site`.
    Não mexa nas pastas dos outros projetos.
 
-## 1. Dar acesso do servidor ao GitHub (repositório privado)
+## 1. Acesso ao GitHub
+
+O repositório é **público**, então não precisa de chave: use a URL `https://github.com/DevCassianoGalvao/novositecassiano`. Só faça o passo abaixo se um dia deixar o repositório privado.
+
+### (Só se for privado) Chave de deploy
 
 1. cPanel > *Acesso SSH* > *Gerenciar chaves SSH* > *Gerar nova chave* (sem senha). Autorize a chave.
 2. Abra a chave **pública** (`.pub`) e copie o conteúdo.
@@ -27,8 +31,8 @@ index.html  robots.txt  sitemap.xml  .htaccess  assets/  api/
 ## 2. Clonar no cPanel
 
 1. cPanel > *Git™ Version Control* > *Criar*.
-2. **URL de clone:** `git@github.com:DevCassianoGalvao/novositecassiano.git`
-3. **Caminho do repositório:** `repositories/novositecassiano` (fora da pasta do domínio).
+2. **URL de clone:** `https://github.com/DevCassianoGalvao/novositecassiano`
+3. **Caminho do repositório:** `repositories/novositecassiano`. **Não use a pasta do domínio** (`cassianogalvao.com.br`): o cPanel só clona em pasta vazia, e ela tem as pastas dos outros projetos. O repositório fica separado e o deploy copia os arquivos para o domínio.
 4. **Nome:** `novositecassiano` > *Criar*.
 
 ## 3. Publicar
@@ -42,7 +46,7 @@ Toda vez que eu fizer push de alguma mudança, é só repetir os passos 2 e 3.
 ## 4. Formulário (Brevo)
 
 1. Na pasta do domínio (ou, melhor, uma pasta acima dela), crie o arquivo `.env` copiando o `.env.example` do repositório.
-2. Preencha `BREVO_API_KEY`, `MAIL_TO` e `MAIL_FROM` (remetente validado na Brevo).
+2. Os e-mails e o assunto já vêm preenchidos. Só cole a `BREVO_API_KEY`.
 3. O `.env` não vai para o GitHub e o `.htaccess` bloqueia o acesso a ele pelo navegador.
 4. Teste: preencha o formulário do site. O e-mail deve chegar e a página deve abrir o WhatsApp.
 
