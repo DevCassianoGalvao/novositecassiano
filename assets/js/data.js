@@ -28,8 +28,8 @@ window.SITE_DATA = {
     { cat: 'sites', tipo: 'Advocacia', nome: 'Dra. Emanuelle de Lima', url: 'https://emanuelledelimaadv.com.br/' },
     { cat: 'sites', tipo: 'Pós-graduação', nome: 'Amanda Zanetti', url: 'https://amandazanetti.com.br/pos-graduacao/' },
 
-    { cat: 'sistemas', destaque: true, tipo: 'Painel sob medida', nome: 'Painel de métricas para marketplaces', desc: 'Quanto cada conta realmente fatura, num painel só.', img: '', url: '', placeholder: true },
-    { cat: 'sistemas', destaque: true, tipo: 'Portal + painel admin', nome: 'Copa Brasil de Talentos', desc: 'Portal público + painel para gerenciar o torneio inteiro.', img: '', url: '', placeholder: true },
+    // Sistemas: imgs = galeria de prints (troca sozinha). wide = card na largura toda.
+    { cat: 'sistemas', destaque: true, wide: true, tipo: 'Sistema web sob medida', nome: 'Torneio Online Web', desc: 'Sistema de gestão de torneios e campeonatos amadores: painel administrativo, cadastro de atletas e portal público do campeonato.', imgs: ['assets/img/portfolio/torneio-painel.webp', 'assets/img/portfolio/torneio-atletas.webp', 'assets/img/portfolio/torneio-portal.webp'], legendas: ['Painel administrativo', 'Cadastro de atletas', 'Portal público do campeonato'], url: '' },
 
     // Motion: vídeos verticais 9:16 otimizados (540x960). Ordem: sites primeiro, campanhas depois.
     { cat: 'motion', tipo: 'Reel de site', nome: 'Congressis', video: 'assets/video/motion/reel-congressis.mp4', poster: 'assets/video/motion/reel-congressis.webp' },

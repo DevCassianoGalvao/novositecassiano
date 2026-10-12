@@ -139,6 +139,12 @@
     var isMotion = p.cat === 'motion', shot;
     if (isMotion && p.video) {
       shot = '<video src="' + esc(p.video) + '"' + (p.poster ? ' poster="' + esc(p.poster) + '"' : '') + ' muted loop playsinline preload="metadata"></video>';
+    } else if (p.imgs && p.imgs.length) {
+      shot = '<div class="gal">' + p.imgs.map(function (src, k) {
+        return '<img class="gal__img' + (k === 0 ? ' is-on' : '') + '" src="' + esc(src) + '" alt="' + esc(p.nome + ' · ' + ((p.legendas || [])[k] || 'tela ' + (k + 1))) + '" loading="lazy">';
+      }).join('') + '<div class="gal__bar">' + p.imgs.map(function (src, k) {
+        return '<button type="button" class="gal__dot' + (k === 0 ? ' is-on' : '') + '" data-k="' + k + '">' + esc((p.legendas || [])[k] || 'Tela ' + (k + 1)) + '</button>';
+      }).join('') + '</div></div>';
     } else if (p.img) {
       shot = '<img src="' + esc(p.img) + '" alt="Print do projeto ' + esc(p.nome) + '" loading="lazy">';
     } else {
@@ -146,8 +152,8 @@
     }
     var go = p.url
       ? '<a class="work__go" href="' + esc(p.url) + '" target="_blank" rel="noopener" aria-label="Visitar ' + esc(p.nome) + '">' + ARROW + '</a>'
-      : (isMotion ? '' : '<span class="work__go" aria-disabled="true">' + ARROW + '</span>');
-    return '<article class="work glass spot' + (isMotion ? ' work--v' : '') + '">' +
+      : ((isMotion || p.imgs) ? '' : '<span class="work__go" aria-disabled="true">' + ARROW + '</span>');
+    return '<article class="work glass spot' + (isMotion ? ' work--v' : '') + (p.wide ? ' work--wide' : '') + '">' +
       '<div class="work__shot">' + shot + (isMotion ? '<span class="work__play" aria-hidden="true">' + PLAY + '</span>' : '') + '</div>' +
       '<div class="work__meta"><div><span class="work__kind">' + esc(p.tipo) + '</span>' +
       '<h3 class="work__name">' + esc(p.nome) + '</h3>' + (p.desc ? '<p class="work__desc">' + esc(p.desc) + '</p>' : '') + '</div>' + go + '</div></article>';
@@ -185,6 +191,17 @@
           v.muted = false; v.play().catch(function () {}); card.classList.add('is-sound');
         } else { v.pause(); card.classList.remove('is-sound'); }
       });
+    });
+    $$('.gal', works).forEach(function (g) {
+      var imgs = $$('.gal__img', g), dots = $$('.gal__dot', g), cur = 0, t = null;
+      var go = function (k) {
+        cur = (k + imgs.length) % imgs.length;
+        imgs.forEach(function (im, i) { im.classList.toggle('is-on', i === cur); });
+        dots.forEach(function (d, i) { d.classList.toggle('is-on', i === cur); });
+        clearTimeout(t); if (!reduce) t = setTimeout(function () { go(cur + 1); }, 4000);
+      };
+      dots.forEach(function (d) { d.addEventListener('click', function (e) { e.stopPropagation(); go(+d.dataset.k); }); });
+      go(0);
     });
     var mt = $('.mslider__track', works);
     if (mt) {
