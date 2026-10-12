@@ -432,7 +432,8 @@
     .from('.nav', { y: -30, opacity: 0, duration: .8 })
     .from('.blink', { opacity: 0, scale: .4, duration: 1.6, stagger: .15, ease: 'power2.out' }, 0)
     .from('[data-hero="eyebrow"]', { y: 16, opacity: 0, duration: .6 }, .25)
-    .from('.hero__line .w', { yPercent: 115, duration: 1, stagger: .05 }, .35)
+    .from('.hero__line:not(.hero__line--last) .w', { yPercent: 115, duration: 1, stagger: .05 }, .35)
+    .from('.hero__line--last .w', { y: 40, opacity: 0, duration: .9 }, .75)
     .from('.hero__pill', { scale: .4, rotate: -14, opacity: 0, duration: .9, ease: 'back.out(2.2)' }, .85)
     .from('[data-hero="sub"]', { y: 20, opacity: 0, duration: .7 }, .95)
     .from('[data-hero="ctas"] > *', { y: 20, opacity: 0, duration: .6, stagger: .08 }, 1.05)
@@ -440,7 +441,7 @@
     .fromTo('.portrait', { clipPath: 'inset(100% 0% 0% 0% round 34px)' }, { clipPath: 'inset(0% 0% 0% 0% round 34px)', duration: 1.4, ease: 'expo.inOut' }, .3)
     .from('.portrait img', { scale: 1.3, duration: 1.8, ease: 'expo.out' }, .6)
     .from('.hero__glowring', { opacity: 0, scale: .6, duration: 1.4, ease: 'power2.out' }, .5)
-    .from('.chip-f, .pill-since, .hand-note', { scale: 0, opacity: 0, duration: .7, stagger: .12, ease: 'back.out(2.4)' }, 1.3)
+    .from('.chip-f, .pill-since', { scale: 0, opacity: 0, duration: .7, stagger: .12, ease: 'back.out(2.4)' }, 1.3)
     .from('.hero__spark-a, .hero__spark-b', { scale: 0, rotate: -180, duration: .9, stagger: .1, ease: 'back.out(2)' }, 1.4)
     .from('.hero__spark', { opacity: 0, scale: .5, duration: 2, ease: 'power2.out' }, 0);
 

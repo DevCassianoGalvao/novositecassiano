@@ -171,7 +171,7 @@ button,input,select{font:inherit;color:inherit}
   background:linear-gradient(180deg,#C49BFF 0%,var(--roxo-claro) 40%,var(--roxo) 100%);
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:var(--roxo-claro);
 }
-.hero__line--last{padding-bottom:.18em}
+.hero__line--last{padding-bottom:.18em;overflow:visible}
 .hero__pill{
   display:inline-flex;align-items:center;vertical-align:.18em;margin-left:.2em;padding:.16em .42em .12em;border-radius:.24em;
   font-size:.56em;color:#03140D;transform:rotate(-3deg);transform-origin:left center;
