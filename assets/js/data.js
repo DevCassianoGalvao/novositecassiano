@@ -30,6 +30,7 @@ window.SITE_DATA = {
 
     // Sistemas: imgs = galeria de prints (troca sozinha). wide = card na largura toda.
     { cat: 'sistemas', destaque: true, wide: true, tipo: 'Sistema web sob medida', nome: 'Torneio Online Web', desc: 'Sistema de gestão de torneios e campeonatos amadores: painel administrativo, cadastro de atletas e portal público do campeonato.', imgs: ['assets/img/portfolio/torneio-painel.webp', 'assets/img/portfolio/torneio-atletas.webp', 'assets/img/portfolio/torneio-portal.webp'], legendas: ['Painel administrativo', 'Cadastro de atletas', 'Portal público do campeonato'], url: '' },
+    { cat: 'sistemas', destaque: true, wide: true, tipo: 'Painel sob medida', nome: 'Painel de métricas para marketplaces', desc: 'Faturamento, pedidos e ticket médio de cada cliente em todos os marketplaces, num painel só. Prints com dados ilustrativos.', imgs: ['assets/img/portfolio/painel-comparativo.webp', 'assets/img/portfolio/painel-cliente.webp', 'assets/img/portfolio/painel-graficos.webp'], legendas: ['Comparativo entre clientes', 'Visão do cliente', 'Gráficos por marketplace'], url: '' },
 
     // Motion: vídeos verticais 9:16 otimizados (540x960). Ordem: sites primeiro, campanhas depois.
     { cat: 'motion', tipo: 'Reel de site', nome: 'Congressis', video: 'assets/video/motion/reel-congressis.mp4', poster: 'assets/video/motion/reel-congressis.webp' },
