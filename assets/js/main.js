@@ -423,20 +423,27 @@
     if (fab && cta) fab.classList.toggle('is-on', y > window.innerHeight * 0.9 && cta.getBoundingClientRect().top > window.innerHeight * 0.6);
   }
   window.addEventListener('scroll', onScroll, { passive: true });
-  /* menu: item ativo conforme a seção na tela */
+  /* menu: traço manuscrito + item ativo conforme a seção na tela */
   var navLinks = $$('.nav__links a');
-  if ('IntersectionObserver' in window && navLinks.length) {
-    var spy = new IntersectionObserver(function (entries) {
-      entries.forEach(function (en) {
-        if (!en.isIntersecting) return;
-        navLinks.forEach(function (l) { l.classList.toggle('is-active', l.getAttribute('href') === '#' + en.target.id); });
-      });
-    }, { rootMargin: '-45% 0px -50% 0px' });
-    navLinks.forEach(function (l) { var t = document.querySelector(l.getAttribute('href')); if (t) spy.observe(t); });
-    var topSpy = new IntersectionObserver(function (entries) { if (entries[0].isIntersecting) navLinks.forEach(function (l) { l.classList.remove('is-active'); }); }, { rootMargin: '-45% 0px -50% 0px' });
-    var heroEl = document.getElementById('topo'); if (heroEl) topSpy.observe(heroEl);
-    navLinks.forEach(function (l) { l.addEventListener('click', function () { navLinks.forEach(function (o) { o.classList.toggle('is-active', o === l); }); }); });
-  }
+  navLinks.forEach(function (l) {
+    l.insertAdjacentHTML('beforeend', '<svg class="scrib" viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true">' +
+      '<path pathLength="1" d="M3 6.4C12 4.2 19 7.6 30 5.4S47 3.6 58 6.2 78 4.4 90 5.6c4 .4 6 .2 7-.4"/>' +
+      '<path pathLength="1" d="M8 8.6C24 7.2 40 8.8 56 7.8S82 7.4 94 8.2"/></svg>');
+  });
+  var navSecs = navLinks.map(function (l) { return document.querySelector(l.getAttribute('href')); });
+  var navLock = 0;
+  var setActive = function (i) { navLinks.forEach(function (l, k) { l.classList.toggle('is-active', k === i); }); };
+  var spyNav = function () {
+    if (Date.now() < navLock) return;
+    var line = window.innerHeight * 0.4, idx = -1;
+    navSecs.forEach(function (sec, k) { if (sec && sec.getBoundingClientRect().top <= line) idx = k; });
+    var cta = document.getElementById('contato');
+    if (cta && cta.getBoundingClientRect().top <= line) idx = navSecs.length - 1; // no CTA mantém "Sobre"
+    setActive(idx);
+  };
+  navLinks.forEach(function (l, k) { l.addEventListener('click', function () { setActive(k); navLock = Date.now() + 1700; setTimeout(spyNav, 1750); }); });
+  window.addEventListener('scroll', function () { window.requestAnimationFrame(spyNav); }, { passive: true });
+  spyNav();
   onScroll();
 
   /* =========================================================

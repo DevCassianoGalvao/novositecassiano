@@ -18,11 +18,11 @@ window.SITE_DATA = {
   */
   projetos: [
     // destaque: true = card grande com print. Os outros aparecem na lista "Mais sites no ar".
-    { cat: 'sites', destaque: true, wide: true, tipo: 'Site de produto · SaaS', nome: 'TechSallus', desc: 'Site de um sistema de gestão para clínicas e hospitais.', img: 'assets/img/portfolio/techsallus.webp', url: 'https://techsallus.com.br/techsallus/' },
     { cat: 'sites', destaque: true, tipo: 'Site institucional', nome: 'Vereador Maicon Gonçalves', desc: 'Site oficial do mandato, com projetos, programas e notícias.', img: 'assets/img/portfolio/maicon-goncalves.webp', url: 'https://maicongoncalves.com.br/' },
     { cat: 'sites', destaque: true, tipo: 'Site institucional', nome: 'Ana Rangel Arquitetura', desc: 'Preto e branco, cada scroll pensado.', img: 'assets/img/portfolio/ana-rangel.webp', url: 'https://www.anarangel.com.br/' },
     { cat: 'sites', destaque: true, tipo: 'Landing page', nome: 'Lamparina Hub', desc: 'Página de vendas para uma consultoria comercial.', img: 'assets/img/portfolio/lamparina-hub.webp', url: 'https://www.lamparinahub.com/' },
-    { cat: 'sites', destaque: true, tipo: 'Site institucional · Austrália', nome: 'Navi Occupational Therapy', desc: 'Clínica de terapia ocupacional do outro lado do mundo.', img: 'assets/img/portfolio/navi-ot.webp', url: 'https://naviot.com.au/' },
+    { cat: 'sites', destaque: true, tipo: 'Site de produto · SaaS', nome: 'TechSallus', desc: 'Site de um sistema de gestão para clínicas e hospitais.', img: 'assets/img/portfolio/techsallus.webp', url: 'https://techsallus.com.br/techsallus/' },
+    { cat: 'sites', tipo: 'Clínica · Austrália', nome: 'Navi Occupational Therapy', url: 'https://naviot.com.au/' },
     { cat: 'sites', tipo: 'Evento de saúde integrativa', nome: 'Congressis', url: 'https://congressis.com.br/' },
     { cat: 'sites', tipo: 'Transportes', nome: 'Difalux', url: 'https://difalux.com.br/' },
     { cat: 'sites', tipo: 'Urologista', nome: 'Dr. André Luiz Nogueira', url: 'https://drandreluiznogueira.com.br/' },
