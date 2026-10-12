@@ -262,7 +262,13 @@ button,input,select{font:inherit;color:inherit}
 /* 1 wordpress */
 .s-wp{display:flex;gap:12px;padding:0}
 .wp__side{width:62px;flex:none;background:#14101F;border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;gap:10px;padding:14px 0}
-.wp__logo{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;border:2px solid #fff;font-family:Georgia,serif;font-weight:700;font-size:17px;color:#fff;margin-bottom:6px}
+.wp__logo{width:30px;height:30px;fill:#fff;margin-bottom:6px}
+.wp__main{position:relative}
+.wp__badge{position:absolute;right:4px;bottom:2px;display:grid;place-items:center;width:58px;height:58px;border-radius:50%;background:#fff;box-shadow:0 0 0 6px rgba(255,255,255,.08),0 14px 30px -10px rgba(0,0,0,.8)}
+.wp__badge svg{width:46px;fill:#21759B}
+.s-wp.is-on .wp__badge{animation:wpIn .7s cubic-bezier(.3,1.6,.5,1) 1.3s both,wpSpin 3s ease-in-out 2.2s infinite}
+@keyframes wpIn{from{transform:scale(0) rotate(-120deg)}to{transform:none}}
+@keyframes wpSpin{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px) rotate(8deg)}}
 .wp__side i{width:26px;height:6px;border-radius:3px;background:rgba(255,255,255,.18)}
 .wp__side i.on{background:var(--roxo-claro)}
 .wp__main{flex:1;min-width:0;padding:14px 14px 14px 0;display:flex;flex-direction:column;gap:12px}
@@ -750,3 +756,13 @@ button,input,select{font:inherit;color:inherit}
   .pv-ic{width:40px;height:40px;border-radius:12px}
   .pv-ic svg{width:18px}
 }
+
+/* depoimentos: miniaturas e vídeo local */
+.testi__video img{transform:scale(var(--z,1));transition:transform .8s var(--ease)}
+.testi__video.is-short{--z:1.46}
+.testi__video.is-wide{--z:1.36}
+.testi__video:hover img{transform:scale(calc(var(--z,1) * 1.04))}
+.testi__video video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
+.testi__video::after{content:"";position:absolute;inset:auto 0 0 0;height:40%;pointer-events:none;background:linear-gradient(0deg,rgba(7,6,11,.7),transparent)}
+.testi__video:has(iframe)::after,.testi__video:has(video)::after{content:none}
+.testi__who{margin-top:14px}

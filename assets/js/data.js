@@ -32,13 +32,17 @@ window.SITE_DATA = {
 
   /* ---------- DEPOIMENTOS ----------
      youtube: só o ID do vídeo (ex.: 'dQw4w9WgXcQ'). Aceita também o link completo.
-     frase: uma linha tirada do próprio vídeo (não inventar).
+     frase: uma linha tirada do próprio vídeo (não inventar). Vazia = não aparece.
+     empresa: opcional. formato: 'short' (vertical) ou 'video' (horizontal).
+     Vídeo hospedado no site: use video + poster no lugar de youtube.
   */
   depoimentos: [
-    { nome: '[NOME DO CLIENTE]', empresa: '[EMPRESA]', frase: '[Frase de uma linha tirada do próprio vídeo]', youtube: '' },
-    { nome: '[NOME DO CLIENTE]', empresa: '[EMPRESA]', frase: '[Frase de uma linha tirada do próprio vídeo]', youtube: '' },
-    { nome: '[NOME DO CLIENTE]', empresa: '[EMPRESA]', frase: '[Frase de uma linha tirada do próprio vídeo]', youtube: '' },
-    { nome: '[NOME DO CLIENTE]', empresa: '[EMPRESA]', frase: '[Frase de uma linha tirada do próprio vídeo]', youtube: '' },
-    { nome: '[NOME DO CLIENTE]', empresa: '[EMPRESA]', frase: '[Frase de uma linha tirada do próprio vídeo]', youtube: '' }
+    { nome: 'Weslen Ruiz', empresa: 'Weslen Ruiz Estúdio Fotográfico', frase: '', video: 'assets/video/depoimento-weslen-ruiz.mp4', poster: 'assets/video/depoimento-weslen-ruiz.webp' },
+    { nome: 'Jhoni Ricardo', empresa: '', frase: '', youtube: 'https://www.youtube.com/watch?v=funP2N_TWlA', formato: 'short' },
+    { nome: 'Clara Fleiuss', empresa: '', frase: '', youtube: 'https://www.youtube.com/shorts/gjajgHXa54c', formato: 'short' },
+    { nome: 'Amanda Zanetti', empresa: '', frase: '', youtube: 'https://www.youtube.com/shorts/IBwge3_1j6Q', formato: 'short' },
+    { nome: 'Thallis Ventura', empresa: '', frase: '', youtube: 'https://www.youtube.com/shorts/2WuXA6MjnOU', formato: 'short' },
+    { nome: 'Vanessa Fuster', empresa: '', frase: '', youtube: 'https://www.youtube.com/shorts/s-PqqI48OxA', formato: 'short' },
+    { nome: 'Rafa Roni', empresa: '', frase: '', youtube: 'https://www.youtube.com/shorts/9bBZajY_WKI', formato: 'short' }
   ]
 };

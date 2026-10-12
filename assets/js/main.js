@@ -196,13 +196,18 @@
     track.innerHTML = (DATA.depoimentos || []).map(function (d) {
       var id = ytId(d.youtube);
       var initials = (d.nome || '?').replace(/[\[\]]/g, '').split(' ').map(function (w) { return w[0] || ''; }).join('').slice(0, 2).toUpperCase();
-      var media = id
-        ? '<div class="testi__video" data-yt="' + id + '"><img src="https://i.ytimg.com/vi/' + id + '/hqdefault.jpg" alt="" loading="lazy">' +
-          '<button class="testi__btn" type="button" aria-label="Assistir depoimento de ' + esc(d.nome) + '">' + PLAY + '</button></div>'
-        : '<div class="testi__video"><div class="ph"><span>[VÍDEO DO YOUTUBE]</span></div></div>';
+      var btn = '<button class="testi__btn" type="button" aria-label="Assistir depoimento de ' + esc(d.nome) + '">' + PLAY + '</button>';
+      var media;
+      if (d.video) {
+        media = '<div class="testi__video" data-video="' + esc(d.video) + '">' + (d.poster ? '<img src="' + esc(d.poster) + '" alt="" loading="lazy">' : '') + btn + '</div>';
+      } else if (id) {
+        media = '<div class="testi__video ' + (d.formato === 'video' ? 'is-wide' : 'is-short') + '" data-yt="' + id + '"><img src="https://i.ytimg.com/vi/' + id + '/hqdefault.jpg" alt="" loading="lazy">' + btn + '</div>';
+      } else {
+        media = '<div class="testi__video"><div class="ph"><span>[VÍDEO DO YOUTUBE]</span></div></div>';
+      }
       return '<article class="testi glass spot">' + media +
-        '<p class="testi__quote">“' + esc(d.frase) + '”</p>' +
-        '<div class="testi__who"><span class="testi__av" aria-hidden="true">' + esc(initials) + '</span><div><b>' + esc(d.nome) + '</b><span>' + esc(d.empresa) + '</span></div></div></article>';
+        (d.frase ? '<p class="testi__quote">“' + esc(d.frase) + '”</p>' : '') +
+        '<div class="testi__who"><span class="testi__av" aria-hidden="true">' + esc(initials) + '</span><div><b>' + esc(d.nome) + '</b>' + (d.empresa ? '<span>' + esc(d.empresa) + '</span>' : '') + '</div></div></article>';
     }).join('');
 
     var cards = $$('.testi', track), dotsEl = $('#tDots'), prev = $('#tPrev'), next = $('#tNext');
@@ -252,6 +257,15 @@
     });
     track.addEventListener('click', function (e) { if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; } }, true);
 
+    $$('[data-video]', track).forEach(function (box) {
+      box.addEventListener('click', function () {
+        if (box.querySelector('video')) return;
+        $$('video', track).forEach(function (v) { v.pause(); });
+        var v = document.createElement('video');
+        v.src = box.dataset.video; v.controls = true; v.autoplay = true; v.playsInline = true;
+        box.appendChild(v); v.play().catch(function () {});
+      });
+    });
     $$('[data-yt]', track).forEach(function (box) {
       box.addEventListener('click', function () {
         if (box.querySelector('iframe')) return;
