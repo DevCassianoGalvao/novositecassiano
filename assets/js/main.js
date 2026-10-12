@@ -195,7 +195,6 @@
   if (track) {
     track.innerHTML = (DATA.depoimentos || []).map(function (d) {
       var id = ytId(d.youtube);
-      var initials = (d.nome || '?').replace(/[\[\]]/g, '').split(' ').map(function (w) { return w[0] || ''; }).join('').slice(0, 2).toUpperCase();
       var btn = '<button class="testi__btn" type="button" aria-label="Assistir depoimento de ' + esc(d.nome) + '">' + PLAY + '</button>';
       var media;
       if (d.video) {
@@ -207,7 +206,7 @@
       }
       return '<article class="testi glass spot">' + media +
         (d.frase ? '<p class="testi__quote">“' + esc(d.frase) + '”</p>' : '') +
-        '<div class="testi__who"><span class="testi__av" aria-hidden="true">' + esc(initials) + '</span><div><b>' + esc(d.nome) + '</b>' + (d.empresa ? '<span>' + esc(d.empresa) + '</span>' : '') + '</div></div></article>';
+        '<p class="testi__who testi__name">' + esc(d.nome) + '</p></article>';
     }).join('');
 
     var cards = $$('.testi', track), dotsEl = $('#tDots'), prev = $('#tPrev'), next = $('#tNext');
@@ -407,7 +406,7 @@
     .fromTo('.portrait', { clipPath: 'inset(100% 0% 0% 0% round 34px)' }, { clipPath: 'inset(0% 0% 0% 0% round 34px)', duration: 1.4, ease: 'expo.inOut' }, .3)
     .from('.portrait img', { scale: 1.3, duration: 1.8, ease: 'expo.out' }, .6)
     .from('.hero__glowring', { opacity: 0, scale: .6, duration: 1.4, ease: 'power2.out' }, .5)
-    .from('.chip-f, .pill-since', { scale: 0, opacity: 0, duration: .7, stagger: .12, ease: 'back.out(2.4)' }, 1.3)
+    .from('.chip-f, .pill-since, .hand-note', { scale: 0, opacity: 0, duration: .7, stagger: .12, ease: 'back.out(2.4)' }, 1.3)
     .from('.hero__spark-a, .hero__spark-b', { scale: 0, rotate: -180, duration: .9, stagger: .1, ease: 'back.out(2)' }, 1.4)
     .from('.hero__spark', { opacity: 0, scale: .5, duration: 2, ease: 'power2.out' }, 0);
 
