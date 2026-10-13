@@ -239,7 +239,7 @@
           <label class="chip"><input type="radio" name="logo" value="Não tenho"><span>Não tenho</span></label>
         </div><div class="error">Escolha uma opção.</div></div>
       <p class="note" id="noLogoNote" hidden>Sem problema. A criação de logo não está incluída no site, mas a gente conversa sobre a melhor saída antes de começar.</p>
-      <div class="field"><span class="label">Envie logo, manual da marca e fotos<span class="hint">Imagens (JPG, PNG, WEBP, SVG), PDF, AI ou ZIP. Até 10 MB por arquivo, até 15 arquivos.</span></span>
+      <div class="field"><span class="label">Envie logo, manual da marca e fotos<span class="hint">Imagens (JPG, PNG, WEBP, SVG), PDF, AI ou ZIP. Até 14 MB no total. Se passar disso, use o link do Drive abaixo.</span></span>
         <label class="drop" id="drop"><input type="file" id="arquivos" name="arquivos[]" multiple accept=".jpg,.jpeg,.png,.webp,.svg,.pdf,.ai,.eps,.zip"><strong>Toque para escolher arquivos</strong><small>ou arraste para cá</small></label>
         <ul class="files" id="fileList"></ul></div>
       <div class="field"><label for="drive">Ou cole um link do Google Drive / Dropbox<span class="hint">Útil se forem muitas fotos. Deixe o link com acesso liberado.</span></label><input id="drive" name="drive" type="url" placeholder="https://drive.google.com/…"></div>
@@ -329,7 +329,7 @@
   var savedEl = document.getElementById('saved');
   var fileInput = document.getElementById('arquivos'), fileList = document.getElementById('fileList'), drop = document.getElementById('drop');
   var current = 0, pickedFiles = [];
-  var MAX_FILES = 15, MAX_SIZE = 10 * 1024 * 1024;
+  var MAX_FILES = 15, MAX_TOTAL = 14 * 1024 * 1024;
 
   // ----- rascunho local -----
   function storeGet(){ try { return JSON.parse(localStorage.getItem(STORE) || 'null'); } catch(e){ return null; } }
@@ -445,7 +445,8 @@
     var skipped = [];
     Array.prototype.forEach.call(list, function(f){
       if (pickedFiles.length >= MAX_FILES){ skipped.push(f.name + ' (limite de ' + MAX_FILES + ' arquivos)'); return; }
-      if (f.size > MAX_SIZE){ skipped.push(f.name + ' (maior que 10 MB)'); return; }
+      var used = pickedFiles.reduce(function(t, x){ return t + x.size; }, 0);
+      if (used + f.size > MAX_TOTAL){ skipped.push(f.name + ' (passaria de 14 MB no total)'); return; }
       pickedFiles.push(f);
     });
     renderFiles();

@@ -59,7 +59,7 @@ Toda vez que eu fizer push de alguma mudança, é só repetir os passos 2 e 3.
 
 ## 6. Briefing (cassianogalvao.com.br/briefing)
 
-- Usa o mesmo `.env` do formulário (Brevo). Cada briefing chega no `MAIL_TO` com o assunto "Novo briefing: Empresa (Nome)".
-- Fotos, logo e PDFs vão anexados quando cabem (até 8 MB no total, formatos JPG, PNG, PDF, ZIP e EPS). SVG, WEBP e AI ficam só no servidor.
-- Tudo também fica salvo em `briefing/respostas/AAAA-MM-DD_hhmmss_empresa/` (bloqueado para acesso pelo navegador). O deploy não apaga essa pasta.
+- Usa o mesmo `.env` do formulário (Brevo). Cada briefing chega no `MAIL_TO` com o assunto "Novo briefing: Empresa (Nome)" e responder o e-mail responde direto pro cliente.
+- Os arquivos do cliente (logo, fotos, PDFs) vão ANEXADOS no e-mail, até 14 MB no total. SVG, WEBP e AI vão juntos num .zip (a Brevo não aceita esses formatos soltos).
+- Nada fica guardado no servidor. Só se a Brevo falhar, o briefing e os arquivos ficam em `briefing/respostas/` como reserva (bloqueado para acesso pelo navegador).
 - Link com dados preenchidos: `cassianogalvao.com.br/briefing/?nome=Ana&empresa=Clinica%20X&whatsapp=22999999999`
