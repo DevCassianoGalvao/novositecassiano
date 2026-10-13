@@ -117,12 +117,14 @@
 <div class="wrap">
   <header class="top">
     <a class="brand" href="/" aria-label="Cassiano Galvão"><img src="/assets/img/logo.svg" alt="Cassiano Galvão — web designer" width="120" height="49"></a>
-    <div class="tag">Briefing do site</div>
+    <div class="tag" id="tag">Briefing do site</div>
   </header>
 
+  <div id="intro">
   <p class="hello">Bora começar!</p>
   <h1>Vamos montar o site da sua <em>empresa</em></h1>
   <p class="lead">Leva uns 10 minutos. Quanto mais detalhe você me der, mais o site vai ter a cara do seu negócio. Suas respostas ficam salvas neste aparelho enquanto você preenche, então pode parar e voltar depois.</p>
+  </div>
 
   <div class="progress" aria-live="polite">
     <div class="progress-meta"><span id="stepName"><b>1. Contato</b></span><span id="stepCount">1 de 7</span></div>
@@ -495,6 +497,8 @@
         document.getElementById('waDone').href = 'https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent(msg);
         form.hidden = true;
         document.querySelector('.progress').hidden = true;
+        document.getElementById('intro').hidden = true;
+        document.getElementById('tag').textContent = 'Briefing enviado';
         document.getElementById('done').classList.add('show');
         window.scrollTo({ top: 0, behavior: 'smooth' });
         try { if (window.fbq) fbq('track', 'SubmitApplication'); } catch(e){}
