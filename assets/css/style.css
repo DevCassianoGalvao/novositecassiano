@@ -421,8 +421,9 @@ button,input,select{font:inherit;color:inherit}
 .flow{position:relative;aspect-ratio:4/3;border-radius:var(--r-md);background:rgba(0,0,0,.4);border:1px solid var(--line-2);
   background-image:radial-gradient(rgba(167,95,255,.18) 1px,transparent 1.2px);background-size:18px 18px}
 .flow__lines{position:absolute;inset:0;width:100%;height:100%}
-.flow__lines path{fill:none;stroke:rgba(167,95,255,.55);stroke-width:1.6;stroke-dasharray:6 6;animation:dash 1.4s linear infinite;vector-effect:non-scaling-stroke}
+.flow__lines g path{fill:none;stroke:rgba(167,95,255,.55);stroke-width:1.6;stroke-dasharray:6 6;animation:dash 1.4s linear infinite;vector-effect:non-scaling-stroke}
 @keyframes dash{to{stroke-dashoffset:-24}}
+.flow__reveal{fill:none;stroke:#fff;stroke-width:14;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:0}
 .node{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);display:flex;align-items:center;gap:8px;
   padding:9px 12px;border-radius:12px;font-size:13px;font-weight:500;white-space:nowrap;
   background:rgba(20,14,34,.9);border:1px solid var(--line-2);box-shadow:0 10px 24px -10px rgba(0,0,0,.8)}

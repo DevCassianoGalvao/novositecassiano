@@ -531,7 +531,21 @@
   $$('[data-stagger]').forEach(function (group) {
     gsap.from(group.children, { y: 40, opacity: 0, duration: .8, stagger: .1, ease: 'power3.out', scrollTrigger: { trigger: group, start: 'top 88%', once: true } });
   });
-  gsap.from('.node', { scale: .5, opacity: 0, duration: .6, stagger: .12, ease: 'back.out(2)', scrollTrigger: { trigger: '.vis-ai', start: 'top 80%', once: true } });
+  /* fluxo de IA: o card central aparece, as linhas saem dele e acendem os outros cards */
+  (function () {
+    var core = $('.node--core'), outer = $$('.flow .node:not(.node--core)'), lines = $$('.flow__reveal');
+    if (!core || !lines.length) return;
+    gsap.set(lines, { strokeDashoffset: 1 });
+    gsap.set(core, { scale: .6, opacity: 0 });
+    gsap.set(outer, { scale: .6, opacity: 0 });
+    var tl = gsap.timeline({ scrollTrigger: { trigger: '.vis-ai', start: 'top 75%', once: true } });
+    tl.to(core, { scale: 1, opacity: 1, duration: .55, ease: 'back.out(2.2)' });
+    lines.forEach(function (ln, i) {
+      var at = .5 + i * .18;
+      tl.to(ln, { strokeDashoffset: 0, duration: .8, ease: 'power2.inOut' }, at);
+      if (outer[i]) tl.to(outer[i], { scale: 1, opacity: 1, duration: .5, ease: 'back.out(2.2)' }, at + .65);
+    });
+  })();
 
   /* ---------- processo: pin + scrub no desktop ---------- */
   var mm = gsap.matchMedia();
