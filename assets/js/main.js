@@ -541,11 +541,9 @@
     var tl = gsap.timeline({ scrollTrigger: { trigger: '.vis-ai', start: 'top 70%', once: true } });
     // 1) surge o card central
     tl.to(core, { scale: 1, opacity: 1, duration: .8, ease: 'back.out(1.8)' });
-    // 2) uma linha por vez trilha o caminho; quando chega, o card dela surge; só então começa a próxima
-    lines.forEach(function (ln, i) {
-      tl.to(ln, { strokeDashoffset: 0, duration: 1.1, ease: 'power1.inOut' }, '+=0.15');
-      if (outer[i]) tl.to(outer[i], { scale: 1, opacity: 1, duration: .55, ease: 'back.out(2)' }, '-=0.05');
-    });
+    // 2) as quatro linhas trilham o caminho juntas; 3) quando chegam, os quatro cards surgem juntos com bounce
+    tl.to(lines, { strokeDashoffset: 0, duration: 1.2, ease: 'power1.inOut' }, '+=0.15');
+    tl.to(outer, { scale: 1, opacity: 1, duration: .6, ease: 'back.out(2)' }, '-=0.05');
   })();
 
   /* ---------- processo: pin + scrub no desktop ---------- */
