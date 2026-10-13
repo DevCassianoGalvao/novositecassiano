@@ -397,6 +397,7 @@
         done.hidden = false;
         if (hasGSAP && !reduce) gsap.from(done, { opacity: 0, scale: .96, duration: .5, ease: 'power3.out' });
         try { window.dataLayer && window.dataLayer.push({ event: 'lead_form', servico: payload.servico }); } catch (err) {}
+        try { window.fbq && window.fbq('track', 'Lead', { content_name: servicoTxt }); } catch (err) {}
         setTimeout(function () { window.location.href = wa; }, 1200);
       };
       if (payload.website) { finish(); return; } // honeypot
@@ -622,3 +623,9 @@
     });
   }
 })();
+
+/* Meta Pixel: clique direto no WhatsApp conta como Contato */
+document.addEventListener('click', function (e) {
+  var a = e.target.closest && e.target.closest('a[href*="wa.me"]');
+  if (a && a.id !== 'waLink') { try { window.fbq && window.fbq('track', 'Contact'); } catch (err) {} }
+});
