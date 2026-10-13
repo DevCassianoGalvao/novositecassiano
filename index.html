@@ -16,7 +16,7 @@
 <meta property="og:image" content="https://cassianogalvao.com.br/assets/img/og-image.jpg">
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
-<link rel="preload" as="image" href="assets/img/cassiano.webp" fetchpriority="high">
+<link rel="preload" as="image" href="assets/img/cassiano.webp" media="(min-width:1001px)" fetchpriority="high">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="author" content="Cassiano Galvão">
 <meta property="og:site_name" content="Cassiano Galvão">
@@ -28,8 +28,9 @@
 <meta name="twitter:image" content="https://cassianogalvao.com.br/assets/img/og-image.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600&family=Space+Grotesk:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap">
-<link rel="stylesheet" href="assets/css/style.css?v=20261012-2330">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600&family=Space+Grotesk:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600&family=Space+Grotesk:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap"></noscript>
+<link rel="stylesheet" href="assets/css/style.css?v=20261012-2345">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@graph":[
 {"@type":"ProfessionalService","@id":"https://cassianogalvao.com.br/#negocio","name":"Cassiano Galvão","url":"https://cassianogalvao.com.br/","image":"https://cassianogalvao.com.br/assets/img/og-image.jpg","logo":"https://cassianogalvao.com.br/assets/img/logo.svg","description":"Sites, design, motion design e soluções com IA para empresas.","telephone":"+55-22-99756-0717","address":{"@type":"PostalAddress","addressLocality":"Nova Friburgo","addressRegion":"RJ","addressCountry":"BR"},"areaServed":"BR","founder":{"@id":"https://cassianogalvao.com.br/#cassiano"},"knowsAbout":["Criação de sites","WordPress","Landing pages","Motion design","Vídeos animados","Automações com IA","Sistemas web"],"sameAs":["https://www.instagram.com/cassianogalvao.web/"]},
@@ -38,16 +39,17 @@
 </script>
 <!-- Meta Pixel Code -->
 <script>
-!function(f,b,e,v,n,t,s)
-{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+/* fila do pixel na hora; o script da Meta só carrega depois da página (não pesa no carregamento) */
+!function(f){if(f.fbq)return;var n=f.fbq=function(){n.callMethod?
 n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-n.queue=[];t=b.createElement(e);t.async=!0;
-t.src=v;s=b.getElementsByTagName(e)[0];
-s.parentNode.insertBefore(t,s)}(window, document,'script',
-'https://connect.facebook.net/en_US/fbevents.js');
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[]}(window);
 fbq('init', '987681871022914');
 fbq('track', 'PageView');
+(function(){var done=0,go=function(){if(done)return;done=1;
+var t=document.createElement('script');t.async=!0;
+t.src='https://connect.facebook.net/en_US/fbevents.js';document.head.appendChild(t);};
+['scroll','pointerdown','touchstart','keydown','mousemove'].forEach(function(e){addEventListener(e,go,{once:true,passive:true});});
+addEventListener('load',function(){setTimeout(go,4000);});})();
 </script>
 <noscript><img height="1" width="1" style="display:none"
 src="https://www.facebook.com/tr?id=987681871022914&ev=PageView&noscript=1"
@@ -126,7 +128,7 @@ src="https://www.facebook.com/tr?id=987681871022914&ev=PageView&noscript=1"
       <div class="hero__photo" id="heroPhoto">
         <div class="hero__glowring" aria-hidden="true"></div>
         <figure class="portrait">
-          <img src="assets/img/cassiano.webp" alt="Cassiano Galvão" width="768" height="960" fetchpriority="high">
+          <img src="assets/img/cassiano.webp" srcset="assets/img/cassiano-480.webp 480w, assets/img/cassiano.webp 768w" sizes="(max-width:1000px) 360px, 460px" alt="Cassiano Galvão" width="768" height="960" decoding="async">
           <span class="portrait__notch" aria-hidden="true"></span>
         </figure>
         <span class="chip-f chip-f--a" data-depth="1.4"><i class="chip-f__ic"><svg viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg></i>Sites</span>
@@ -548,10 +550,10 @@ src="https://www.facebook.com/tr?id=987681871022914&ev=PageView&noscript=1"
   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.4A8.4 8.4 0 1 1 21 11.5z"/></svg>
 </a>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.9/dist/lenis.min.js"></script>
-<script src="assets/js/data.js?v=20261012-2330"></script>
-<script src="assets/js/main.js?v=20261012-2330"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/lenis@1.1.9/dist/lenis.min.js"></script>
+<script defer src="assets/js/data.js?v=20261012-2345"></script>
+<script defer src="assets/js/main.js?v=20261012-2345"></script>
 </body>
 </html>

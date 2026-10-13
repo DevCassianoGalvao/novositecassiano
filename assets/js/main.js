@@ -138,7 +138,7 @@
   function workCard(p) {
     var isMotion = p.cat === 'motion', shot;
     if (isMotion && p.video) {
-      shot = '<video src="' + esc(p.video) + '"' + (p.poster ? ' poster="' + esc(p.poster) + '"' : '') + ' muted loop playsinline preload="metadata"></video>';
+      shot = '<video src="' + esc(p.video) + '"' + (p.poster ? ' poster="' + esc(p.poster) + '"' : '') + ' muted loop playsinline preload="none"></video>';
     } else if (p.imgs && p.imgs.length) {
       shot = '<div class="gal">' + p.imgs.map(function (src, k) {
         return '<img class="gal__img' + (k === 0 ? ' is-on' : '') + '" src="' + esc(src) + '" alt="' + esc(p.nome + ' · ' + ((p.legendas || [])[k] || 'tela ' + (k + 1))) + '" loading="lazy">';
@@ -458,7 +458,7 @@
   gsap.registerPlugin(ScrollTrigger);
 
   var lenis = null;
-  if (window.Lenis) {
+  if (window.Lenis && window.matchMedia('(pointer: fine)').matches) {
     lenis = new Lenis({ duration: 1.15, smoothWheel: true });
     lenis.on('scroll', ScrollTrigger.update);
     gsap.ticker.add(function (t) { lenis.raf(t * 1000); });
@@ -470,13 +470,13 @@
   gsap.timeline({ defaults: { ease: 'power4.out' } })
     .from('.nav', { y: -30, opacity: 0, duration: .8 })
     .from('.blink', { opacity: 0, scale: .4, duration: 1.6, stagger: .15, ease: 'power2.out' }, 0)
-    .from('[data-hero="eyebrow"]', { y: 16, opacity: 0, duration: .6 }, .25)
+    .from('[data-hero="eyebrow"]', { y: 16, duration: .6 }, .25)
     .from('.hero__line:not(.hero__line--last) .w', { yPercent: 115, duration: 1, stagger: .05 }, .35)
     .from('.hero__line--last .w', { y: 40, opacity: 0, duration: .9 }, .75)
     .from('.hero__pill', { scale: .4, rotate: -14, opacity: 0, duration: .9, ease: 'back.out(2.2)' }, .85)
-    .from('[data-hero="sub"]', { y: 20, opacity: 0, duration: .7 }, .95)
-    .from('[data-hero="ctas"] > *', { y: 20, opacity: 0, duration: .6, stagger: .08 }, 1.05)
-    .from('.hero__stats li', { y: 20, opacity: 0, duration: .6, stagger: .08 }, 1.15)
+    .from('[data-hero="sub"]', { y: 20, duration: .7 }, .95)
+    .from('[data-hero="ctas"] > *', { y: 20, duration: .6, stagger: .08 }, 1.05)
+    .from('.hero__stats li', { y: 20, duration: .6, stagger: .08 }, 1.15)
     .fromTo('.portrait', { clipPath: 'inset(100% 0% 0% 0% round 34px)' }, { clipPath: 'inset(0% 0% 0% 0% round 34px)', duration: 1.4, ease: 'expo.inOut' }, .3)
     .from('.portrait img', { scale: 1.3, duration: 1.8, ease: 'expo.out' }, .6)
     .from('.hero__glowring', { opacity: 0, scale: .6, duration: 1.4, ease: 'power2.out' }, .5)
@@ -512,6 +512,8 @@
     hero.addEventListener('pointerleave', function () { depthLayers.forEach(function (l) { l.x(0); }); pX(0); pY(0); });
   }
 
+  /* scroll e revelações montam depois do primeiro desenho da tela (não travam o hero) */
+  var setupScroll = function () {
   // saída suave do hero ao rolar
   gsap.to('.hero__photo', { yPercent: -8, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } });
   gsap.to('.hero__spark', { yPercent: 40, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } });
@@ -572,6 +574,10 @@
   gsap.fromTo('#ctaPanel', { scale: .92, borderRadius: 80 }, { scale: 1, borderRadius: 40, ease: 'none', scrollTrigger: { trigger: '#contato', start: 'top bottom', end: 'top 35%', scrub: true } });
   gsap.from('.cta__spark-bl', { scale: 0, rotate: -120, duration: 1.2, ease: 'back.out(2)', scrollTrigger: { trigger: '#contato', start: 'top 70%', once: true } });
 
+  };
+  var whenIdle = window.requestIdleCallback || function (f) { return setTimeout(f, 250); };
+  whenIdle(function () { setupScroll(); ScrollTrigger.refresh(); }, { timeout: 1200 });
+
   /* ---------- botões magnéticos ---------- */
   if (finePointer) {
     $$('.magnetic').forEach(function (el) {
@@ -629,3 +635,12 @@ document.addEventListener('click', function (e) {
   var a = e.target.closest && e.target.closest('a[href*="wa.me"]');
   if (a && a.id !== 'waLink') { try { window.fbq && window.fbq('track', 'Contact'); } catch (err) {} }
 });
+
+/* desempenho: pausa as animações CSS das seções fora da tela */
+(function () {
+  if (!('IntersectionObserver' in window)) return;
+  var io = new IntersectionObserver(function (es) {
+    es.forEach(function (e) { e.target.classList.toggle('is-off', !e.isIntersecting); });
+  }, { rootMargin: '200px 0px' });
+  document.querySelectorAll('main > section, main > div, .footer').forEach(function (el) { io.observe(el); });
+})();

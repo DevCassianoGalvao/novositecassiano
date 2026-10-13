@@ -952,3 +952,5 @@ button,input,select{font:inherit;color:inherit}
 .footer__ig.footer__wa svg{width:21px;fill:#fff;stroke:none}
 .footer__wa:hover{background:var(--verde);border-color:var(--verde)}
 .footer__ig.footer__wa:hover svg{fill:#03140D!important}
+/* seções fora da tela não gastam processamento */
+.is-off *,.is-off *::before,.is-off *::after{animation-play-state:paused!important}
