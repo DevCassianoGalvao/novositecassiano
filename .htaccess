@@ -5,6 +5,7 @@ Options -Indexes
   Require all denied
 </FilesMatch>
 RedirectMatch 404 /\.git
+RedirectMatch 301 ^/brief/?$ /briefing/
 
 # HTTPS e sem www
 <IfModule mod_rewrite.c>

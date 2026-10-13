@@ -2,7 +2,7 @@
 /**
  * Recebe o briefing do site, salva no servidor e envia por e-mail pela Brevo.
  * Usa o mesmo .env do formulário do site (BREVO_API_KEY, MAIL_TO, MAIL_FROM...).
- * Respostas e arquivos ficam em /brief/respostas/ (bloqueado para acesso público).
+ * Respostas e arquivos ficam em /briefing/respostas/ (bloqueado para acesso público).
  */
 
 declare(strict_types=1);
@@ -151,7 +151,7 @@ foreach ($rotulos as $secao => $campos) {
     }
 }
 $texto .= "\n## ARQUIVOS ENVIADOS\n";
-$texto .= $salvos ? ('- ' . implode("\n- ", $salvos) . "\n  (pasta: brief/respostas/{$id})\n") : "- Nenhum\n";
+$texto .= $salvos ? ('- ' . implode("\n- ", $salvos) . "\n  (pasta: briefing/respostas/{$id})\n") : "- Nenhum\n";
 
 file_put_contents($dir . '/briefing.txt', $texto);
 file_put_contents($dir . '/briefing.json', json_encode(
@@ -207,7 +207,7 @@ foreach ($rotulos as $secao => $campos) {
 $html .= '<p style="margin:0;padding:20px 28px 6px;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#00EF9E;font-weight:bold">Arquivos</p>'
     . '<p style="margin:0;padding:0 28px;font-size:14px">' . ($salvos
         ? ($anexos ? count($anexos) . ' anexado(s) neste e-mail. ' : '')
-          . ($naoAnexados ? 'No servidor (brief/respostas/' . $h($id) . '): ' . $h(implode(', ', $naoAnexados)) : '')
+          . ($naoAnexados ? 'No servidor (briefing/respostas/' . $h($id) . '): ' . $h(implode(', ', $naoAnexados)) : '')
         : 'Nenhum') . '</p>'
     . '<div style="padding:24px 28px 28px"><a href="' . $h($waLink) . '" style="display:inline-block;background:#00EF9E;color:#03140D;font-weight:bold;padding:12px 22px;border-radius:999px;text-decoration:none">Responder no WhatsApp</a></div>'
     . '</div>';
@@ -243,7 +243,7 @@ function brevo(array $payload, string $apiKey): array
 if (($st < 200 || $st >= 300) && $anexos) {
     // se os anexos derem problema, manda pelo menos o texto
     error_log('[brief] Brevo recusou com anexos (' . $st . '): ' . $res);
-    $payload['htmlContent'] = str_replace(count($anexos) . ' anexado(s) neste e-mail. ', 'Arquivos salvos em brief/respostas/' . $h($id) . '. ', $payload['htmlContent']);
+    $payload['htmlContent'] = str_replace(count($anexos) . ' anexado(s) neste e-mail. ', 'Arquivos salvos em briefing/respostas/' . $h($id) . '. ', $payload['htmlContent']);
     [$st, $res] = brevo($payload, $apiKey);
 }
 if ($st < 200 || $st >= 300) error_log('[brief] Falha Brevo (' . $st . '): ' . $res . ' · briefing salvo em ' . $id);

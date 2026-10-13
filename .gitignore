@@ -3,5 +3,5 @@
 node_modules/
 *.log
 # respostas dos clientes ficam só no servidor
-brief/respostas/*
-!brief/respostas/.htaccess
+briefing/respostas/*
+!briefing/respostas/.htaccess
