@@ -2,3 +2,6 @@
 .DS_Store
 node_modules/
 *.log
+# respostas dos clientes ficam só no servidor
+brief/respostas/*
+!brief/respostas/.htaccess

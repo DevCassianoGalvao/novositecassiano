@@ -1,7 +1,7 @@
 Options -Indexes
 
 # Bloqueia arquivos sensíveis
-<FilesMatch "^\.(env|git|htaccess|cpanel)|\.(md|example|log|yml)$">
+<FilesMatch "^\.(env|git|htaccess|cpanel|user)|\.(md|example|log|yml)$">
   Require all denied
 </FilesMatch>
 RedirectMatch 404 /\.git

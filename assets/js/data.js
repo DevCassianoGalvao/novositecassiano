@@ -57,6 +57,7 @@ window.SITE_DATA = {
   */
   depoimentos: [
     { nome: 'Weslen Ruiz', empresa: 'Weslen Ruiz Estúdio Fotográfico', frase: '', video: 'assets/video/depoimento-weslen-ruiz.mp4', poster: 'assets/video/depoimento-weslen-ruiz.webp' },
+    { nome: 'William', empresa: '', frase: '', video: 'assets/video/depoimento-william.mp4', poster: 'assets/video/depoimento-william.webp' },
     { nome: 'Jhoni Ricardo', empresa: '', frase: '', youtube: 'https://www.youtube.com/watch?v=funP2N_TWlA', formato: 'short' },
     { nome: 'Clara Fleiuss', empresa: '', frase: '', youtube: 'https://www.youtube.com/shorts/gjajgHXa54c', formato: 'short' },
     { nome: 'Amanda Zanetti', empresa: '', frase: '', youtube: 'https://www.youtube.com/shorts/IBwge3_1j6Q', formato: 'short' },

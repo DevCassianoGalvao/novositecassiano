@@ -12,3 +12,4 @@ deployment:
     - /bin/cp -f index.html robots.txt sitemap.xml .htaccess $DEPLOYPATH
     - /bin/cp -Rf assets $DEPLOYPATH
     - /bin/cp -Rf api $DEPLOYPATH
+    - /bin/cp -Rf brief $DEPLOYPATH

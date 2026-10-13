@@ -5,7 +5,7 @@ O repositório fica numa pasta separada no servidor e o cPanel **copia só os ar
 O que vai para a pasta do domínio:
 
 ```
-index.html  robots.txt  sitemap.xml  .htaccess  assets/  api/
+index.html  robots.txt  sitemap.xml  .htaccess  assets/  api/  brief/
 ```
 
 ## 0. Antes de começar (uma vez só)
@@ -56,3 +56,10 @@ Toda vez que eu fizer push de alguma mudança, é só repetir os passos 2 e 3.
 - As pastas antigas continuam respondendo (ex.: `https://cassianogalvao.com.br/torneio-online/`).
 - `https://cassianogalvao.com.br/.env` e `/.cpanel.yml` devem dar **403**.
 - Envie o `sitemap.xml` no Google Search Console.
+
+## 6. Briefing (cassianogalvao.com.br/brief)
+
+- Usa o mesmo `.env` do formulário (Brevo). Cada briefing chega no `MAIL_TO` com o assunto "Novo briefing: Empresa (Nome)".
+- Fotos, logo e PDFs vão anexados quando cabem (até 8 MB no total, formatos JPG, PNG, PDF, ZIP e EPS). SVG, WEBP e AI ficam só no servidor.
+- Tudo também fica salvo em `brief/respostas/AAAA-MM-DD_hhmmss_empresa/` (bloqueado para acesso pelo navegador). O deploy não apaga essa pasta.
+- Link com dados preenchidos: `cassianogalvao.com.br/brief/?nome=Ana&empresa=Clinica%20X&whatsapp=22999999999`
