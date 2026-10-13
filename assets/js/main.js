@@ -531,19 +531,17 @@
   $$('[data-stagger]').forEach(function (group) {
     gsap.from(group.children, { y: 40, opacity: 0, duration: .8, stagger: .1, ease: 'power3.out', scrollTrigger: { trigger: group, start: 'top 88%', once: true } });
   });
-  /* fluxo de IA: o card central aparece, as linhas saem dele e acendem os outros cards */
+  /* fluxo de IA: cards e linhas entram juntos */
   (function () {
     var core = $('.node--core'), outer = $$('.flow .node:not(.node--core)'), lines = $$('.flow__reveal');
     if (!core || !lines.length) return;
     gsap.set(lines, { strokeDashoffset: 1 });
     gsap.set(core, { scale: .6, opacity: 0 });
     gsap.set(outer, { scale: .6, opacity: 0 });
-    var tl = gsap.timeline({ scrollTrigger: { trigger: '.vis-ai', start: 'top 70%', once: true } });
-    // 1) surge o card central
-    tl.to(core, { scale: 1, opacity: 1, duration: .8, ease: 'back.out(1.8)' });
-    // 2) as quatro linhas trilham o caminho juntas; 3) quando chegam, os quatro cards surgem juntos com bounce
-    tl.to(lines, { strokeDashoffset: 0, duration: 1.2, ease: 'power1.inOut' }, '+=0.15');
-    tl.to(outer, { scale: 1, opacity: 1, duration: .6, ease: 'back.out(2)' }, '-=0.05');
+    // tudo junto: cards surgem com bounce e as linhas se desenham ao mesmo tempo
+    var tl = gsap.timeline({ scrollTrigger: { trigger: '.vis-ai', start: 'top 75%', once: true } });
+    tl.to([core].concat(outer), { scale: 1, opacity: 1, duration: .7, ease: 'back.out(2)' }, 0);
+    tl.to(lines, { strokeDashoffset: 0, duration: .9, ease: 'power2.out' }, 0);
   })();
 
   /* ---------- processo: pin + scrub no desktop ---------- */
