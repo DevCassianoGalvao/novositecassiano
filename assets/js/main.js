@@ -538,12 +538,13 @@
     gsap.set(lines, { strokeDashoffset: 1 });
     gsap.set(core, { scale: .6, opacity: 0 });
     gsap.set(outer, { scale: .6, opacity: 0 });
-    var tl = gsap.timeline({ scrollTrigger: { trigger: '.vis-ai', start: 'top 75%', once: true } });
-    tl.to(core, { scale: 1, opacity: 1, duration: .55, ease: 'back.out(2.2)' });
+    var tl = gsap.timeline({ scrollTrigger: { trigger: '.vis-ai', start: 'top 70%', once: true } });
+    // 1) surge o card central
+    tl.to(core, { scale: 1, opacity: 1, duration: .8, ease: 'back.out(1.8)' });
+    // 2) uma linha por vez trilha o caminho; quando chega, o card dela surge; só então começa a próxima
     lines.forEach(function (ln, i) {
-      var at = .5 + i * .18;
-      tl.to(ln, { strokeDashoffset: 0, duration: .8, ease: 'power2.inOut' }, at);
-      if (outer[i]) tl.to(outer[i], { scale: 1, opacity: 1, duration: .5, ease: 'back.out(2.2)' }, at + .65);
+      tl.to(ln, { strokeDashoffset: 0, duration: 1.1, ease: 'power1.inOut' }, '+=0.15');
+      if (outer[i]) tl.to(outer[i], { scale: 1, opacity: 1, duration: .55, ease: 'back.out(2)' }, '-=0.05');
     });
   })();
 
