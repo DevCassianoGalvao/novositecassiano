@@ -22,12 +22,12 @@ window.SITE_DATA = {
     { cat: 'sites', destaque: true, tipo: 'Site institucional', nome: 'Ana Rangel Arquitetura', desc: 'Preto e branco, cada scroll pensado.', img: 'assets/img/portfolio/ana-rangel.webp', url: 'https://www.anarangel.com.br/' },
     { cat: 'sites', destaque: true, tipo: 'Landing page', nome: 'Lamparina Hub', desc: 'Página de vendas para uma consultoria comercial.', img: 'assets/img/portfolio/lamparina-hub.webp', url: 'https://www.lamparinahub.com/' },
     { cat: 'sites', destaque: true, tipo: 'Site de produto · SaaS', nome: 'TechSallus', desc: 'Site de um sistema de gestão para clínicas e hospitais.', img: 'assets/img/portfolio/techsallus.webp', url: 'https://techsallus.com.br/techsallus/' },
-    { cat: 'sites', tipo: 'Clínica · Austrália', nome: 'Navi Occupational Therapy', url: 'https://naviot.com.au/' },
-    { cat: 'sites', tipo: 'Evento de saúde integrativa', nome: 'Congressis', url: 'https://congressis.com.br/' },
-    { cat: 'sites', tipo: 'Transportes', nome: 'Difalux', url: 'https://difalux.com.br/' },
-    { cat: 'sites', tipo: 'Urologista', nome: 'Dr. André Luiz Nogueira', url: 'https://drandreluiznogueira.com.br/' },
-    { cat: 'sites', tipo: 'Advocacia', nome: 'Dra. Emanuelle de Lima', url: 'https://emanuelledelimaadv.com.br/' },
-    { cat: 'sites', tipo: 'Pós-graduação', nome: 'Amanda Zanetti', url: 'https://amandazanetti.com.br/pos-graduacao/' },
+    { cat: 'sites', tipo: 'Clínica · Austrália', nome: 'Navi Occupational Therapy', img: 'assets/img/portfolio/navi-ot.webp', url: 'https://naviot.com.au/' },
+    { cat: 'sites', tipo: 'Evento de saúde integrativa', nome: 'Congressis', img: 'assets/img/portfolio/congressis.webp', url: 'https://congressis.com.br/' },
+    { cat: 'sites', tipo: 'Transportes', nome: 'Difalux', img: 'assets/img/portfolio/difalux.webp', url: 'https://difalux.com.br/' },
+    { cat: 'sites', tipo: 'Urologista', nome: 'Dr. André Luiz Nogueira', img: 'assets/img/portfolio/andre-nogueira.webp', url: 'https://drandreluiznogueira.com.br/' },
+    { cat: 'sites', tipo: 'Advocacia', nome: 'Dra. Emanuelle de Lima', img: 'assets/img/portfolio/emanuelle-lima.webp', url: 'https://emanuelledelimaadv.com.br/' },
+    { cat: 'sites', tipo: 'Pós-graduação', nome: 'Amanda Zanetti', img: 'assets/img/portfolio/amanda-zanetti.webp', url: 'https://amandazanetti.com.br/pos-graduacao/' },
 
     // Sistemas: imgs = galeria de prints (troca sozinha). wide = card na largura toda.
     { cat: 'sistemas', destaque: true, wide: true, tipo: 'Sistema web sob medida', nome: 'Torneio Online Web', desc: 'Sistema de gestão de torneios e campeonatos amadores: painel administrativo, cadastro de atletas e portal público do campeonato.', imgs: ['assets/img/portfolio/torneio-painel.webp', 'assets/img/portfolio/torneio-atletas.webp', 'assets/img/portfolio/torneio-portal.webp'], legendas: ['Painel administrativo', 'Cadastro de atletas', 'Portal público do campeonato'], url: '' },

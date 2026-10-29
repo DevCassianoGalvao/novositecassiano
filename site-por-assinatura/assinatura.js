@@ -139,24 +139,21 @@
   var ARROW = '<svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg>';
   var works = $('#works');
   if (works) {
-    var sites = (DATA.projetos || []).filter(function (p) { return p.cat === 'sites'; });
-    var feat = sites.filter(function (p) { return p.destaque; }), rest = sites.filter(function (p) { return !p.destaque; });
-    var html = '<div class="works__grid" data-stagger>' + feat.map(function (p) {
-      var shot = p.img ? '<img src="' + esc(asset(p.img)) + '" alt="Print do site ' + esc(p.nome) + '" width="1280" height="800" loading="lazy" decoding="async">' : '<div class="ph"><span>[PRINT DO SITE]</span></div>';
-      var go = p.url ? '<a class="work__go" href="' + esc(p.url) + '" target="_blank" rel="noopener" aria-label="Visitar ' + esc(p.nome) + '">' + ARROW + '</a>' : '';
-      return '<article class="work glass spot"><div class="work__shot">' + shot + '</div>' +
+    var sites = (DATA.projetos || []).filter(function (p) { return p.cat === 'sites' && p.img; });
+    var card = function (p, clone) {
+      var tag = p.url ? 'a' : 'div';
+      var attrs = p.url ? ' href="' + esc(p.url) + '" target="_blank" rel="noopener"' + (clone ? ' tabindex="-1" aria-hidden="true"' : ' aria-label="Visitar o site ' + esc(p.nome) + '"') : '';
+      return '<' + tag + ' class="work glass spot"' + attrs + '><div class="work__shot"><img src="' + esc(asset(p.img)) + '" alt="' + (clone ? '' : 'Tela inicial do site ' + esc(p.nome)) + '" width="1200" height="750" loading="lazy" decoding="async"></div>' +
         '<div class="work__meta"><div><span class="work__kind">' + esc(p.tipo) + '</span><h3 class="work__name">' + esc(p.nome) + '</h3>' +
-        (p.desc ? '<p class="work__desc">' + esc(p.desc) + '</p>' : '') + '</div>' + go + '</div></article>';
-    }).join('') + '</div>';
-    if (rest.length) {
-      html += '<div class="more" data-reveal><p class="more__title">Mais sites no ar</p><ul class="more__list">' + rest.map(function (p) {
-        return '<li><a href="' + esc(p.url) + '" target="_blank" rel="noopener"><span><b>' + esc(p.nome) + '</b><small>' + esc(p.tipo) + '</small></span>' + ARROW + '</a></li>';
-      }).join('') + '</ul></div>';
-    }
-    works.innerHTML = html;
-    var newEls = $$('.works__grid > *, .more', works);
-    newEls.forEach(function (c, i) { c.style.setProperty('--dl', Math.min(i * 0.08, 0.4) + 's'); });
-    if (typeof io !== 'undefined') newEls.forEach(function (el) { io.observe(el); }); else newEls.forEach(show);
+        (p.desc ? '<p class="work__desc">' + esc(p.desc) + '</p>' : '') + '</div>' + (p.url ? '<span class="work__go" aria-hidden="true">' + ARROW + '</span>' : '') + '</div></' + tag + '>';
+    };
+    // a lista vai duas vezes: a segunda metade é a cópia que fecha o loop sem emenda
+    works.innerHTML = '<div class="sa-port__track">' + sites.map(function (p) { return card(p, false); }).join('') + sites.map(function (p) { return card(p, true); }).join('') + '</div>';
+    works.insertAdjacentHTML('afterend', '<p class="sa-port__hint">Passe o mouse ou toque para pausar. Clique para abrir o site.</p>');
+    var portTrack = $('.sa-port__track', works);
+    // no celular, segurar o dedo pausa
+    works.addEventListener('touchstart', function () { portTrack.style.animationPlayState = 'paused'; }, { passive: true });
+    works.addEventListener('touchend', function () { setTimeout(function () { portTrack.style.animationPlayState = ''; }, 1500); }, { passive: true });
   }
 
   /* =========================================================
