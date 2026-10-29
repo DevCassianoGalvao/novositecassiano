@@ -452,8 +452,6 @@
 
     track('Lead', { content_name: 'Plano ' + PLANS[chosen].nome, currency: 'BRL', value: PLANS[chosen].preco });
 
-    // TODO (fase 2): redirecionar para o checkout do gateway com plano e dados pré-preenchidos,
-    //                disparando track('InitiateCheckout', { value, currency: 'BRL' }) antes do redirect.
     // O lead é gravado no banco (painel /admin) e avisado por e-mail pelo api/assinatura.php.
     submitBtn.classList.add('is-loading');
     $('.btn__label', submitBtn).textContent = 'Enviando...';
@@ -469,7 +467,17 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
       signal: ctrl ? ctrl.signal : undefined
-    }).catch(function () {}).then(function () { clearTimeout(timer); finish(); });
+    }).then(function (r) { return r.json(); }).catch(function () { return null; }).then(function (d) {
+      clearTimeout(timer);
+      // lead salvo: segue para a página de pagamento (Pix ou cartão)
+      if (d && d.ok && d.pay_url && /^https?:\/\//.test(d.pay_url)) {
+        track('InitiateCheckout', { content_name: 'Plano ' + PLANS[chosen].nome, currency: 'BRL', value: PLANS[chosen].preco });
+        $('.btn__label', submitBtn).textContent = 'Abrindo o pagamento...';
+        setTimeout(function () { location.href = d.pay_url; }, 250);
+        return;
+      }
+      finish();
+    });
   });
 
   bindSpots(document);

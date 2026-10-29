@@ -11,11 +11,32 @@ header('Content-Type: application/json; charset=utf-8');
 header('X-Content-Type-Options: nosniff');
 header('Cache-Control: no-store');
 
+$GLOBALS['early_sent'] = false;
+$GLOBALS['pay_url'] = null;
+
 function respond(int $status, array $body): void
 {
-    http_response_code($status);
-    echo json_encode($body, JSON_UNESCAPED_UNICODE);
+    if (!$GLOBALS['early_sent']) {
+        if ($status < 300 && !empty($GLOBALS['pay_url'])) $body['pay_url'] = $GLOBALS['pay_url'];
+        http_response_code($status);
+        echo json_encode($body, JSON_UNESCAPED_UNICODE);
+    }
     exit;
+}
+
+/** Responde ao navegador já (para redirecionar rápido) e segue enviando o e-mail em segundo plano. */
+function respond_early(array $body): void
+{
+    $fin = function_exists('fastcgi_finish_request') ? 'fastcgi_finish_request' : (function_exists('litespeed_finish_request') ? 'litespeed_finish_request' : null);
+    if (!$fin) return; // sem suporte: responde só no final
+    ignore_user_abort(true);
+    $json = json_encode($body, JSON_UNESCAPED_UNICODE);
+    http_response_code(200);
+    header('Content-Length: ' . strlen($json));
+    header('Connection: close');
+    echo $json;
+    $GLOBALS['early_sent'] = true;
+    $fin();
 }
 
 require dirname(__DIR__) . '/admin/inc/bootstrap.php';
@@ -64,10 +85,32 @@ try {
             [$nome, $whatsapp, $email, $plano, 'novo', $pagina, $utm ? json_encode($utm, JSON_UNESCAPED_UNICODE) : null]);
         $leadId = (int) db()->lastInsertId();
         log_activity('lead', "Novo lead: $nome ({$planos[$plano]})", null, $leadId);
+
+        /* cria (ou reaproveita) o cliente "aguardando pagamento" e devolve o link da página de pagamento */
+        require_once dirname(__DIR__) . '/admin/inc/billing.php';
+        $planRow = q_one('SELECT * FROM plans WHERE slug = ? AND active = 1', [$plano]);
+        if ($planRow) {
+            $cust = q_one("SELECT id, status FROM customers WHERE email = ? AND status <> 'cancelado' ORDER BY id DESC LIMIT 1", [$email]);
+            if ($cust && $cust['status'] === 'pendente') {
+                q('UPDATE customers SET name = ?, whatsapp = ?, plan_id = ?, price_cents = ?, updated_at = NOW() WHERE id = ?', [$nome, $whatsapp, (int) $planRow['id'], (int) $planRow['price_cents'], (int) $cust['id']]);
+                $custId = (int) $cust['id'];
+            } elseif ($cust) {
+                $custId = (int) $cust['id']; // já é cliente: só leva ao pagamento dele
+            } else {
+                q('INSERT INTO customers (name, email, whatsapp, plan_id, price_cents, status, billing_mode, lead_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
+                    [$nome, $email, $whatsapp, (int) $planRow['id'], (int) $planRow['price_cents'], 'pendente', 'mercadopago', $leadId]);
+                $custId = (int) db()->lastInsertId();
+                log_activity('cliente', 'Cliente criado automaticamente pelo formulário da página', $custId, $leadId);
+            }
+            q("UPDATE leads SET customer_id = ?, status = 'negociando', updated_at = NOW() WHERE id = ?", [$custId, $leadId]);
+            $custRow = customer_find($custId);
+            if ($custRow) $GLOBALS['pay_url'] = pay_url($custRow);
+        }
     }
 } catch (Throwable $e) {
     error_log('[assinatura] banco: ' . $e->getMessage());
 }
+if ($GLOBALS['pay_url']) respond_early(['ok' => true, 'pay_url' => $GLOBALS['pay_url']]);
 
 /* 2) avisa por e-mail */
 $apiKey = env('BREVO_API_KEY');
