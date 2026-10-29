@@ -5,7 +5,7 @@ O repositório fica numa pasta separada no servidor e o cPanel **copia só os ar
 O que vai para a pasta do domínio:
 
 ```
-index.html  robots.txt  sitemap.xml  .htaccess  assets/  api/  briefing/
+index.html  robots.txt  sitemap.xml  .htaccess  assets/  api/  briefing/  site-por-assinatura/
 ```
 
 ## 0. Antes de começar (uma vez só)
@@ -63,3 +63,10 @@ Toda vez que eu fizer push de alguma mudança, é só repetir os passos 2 e 3.
 - Os arquivos do cliente (logo, fotos, PDFs) vão ANEXADOS no e-mail, até 14 MB no total. SVG, WEBP e AI vão juntos num .zip (a Brevo não aceita esses formatos soltos).
 - Nada fica guardado no servidor. Só se a Brevo falhar, o briefing e os arquivos ficam em `briefing/respostas/` como reserva (bloqueado para acesso pelo navegador).
 - Link com dados preenchidos: `cassianogalvao.com.br/briefing/?nome=Ana&empresa=Clinica%20X&whatsapp=22999999999`
+
+## 7. Site por assinatura (cassianogalvao.com.br/site-por-assinatura)
+
+- Página de vendas separada, com o mesmo visual do site. Arquivos em `site-por-assinatura/` (usa o `assets/` do site principal).
+- O pop-up de planos manda o lead por e-mail (Brevo, mesmo `.env`) pelo `api/assinatura.php`, com plano e UTMs. Assunto: "Site por assinatura: Nome quer o Completo".
+- Fase 2 (TODO no código): webhook de leads, checkout e evento InitiateCheckout.
+- A pergunta "Posso cancelar quando quiser?" está escondida até definir fidelidade e multa (comentário no HTML).

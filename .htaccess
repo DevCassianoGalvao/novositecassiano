@@ -6,6 +6,7 @@ Options -Indexes
 </FilesMatch>
 RedirectMatch 404 /\.git
 RedirectMatch 301 ^/brief/?$ /briefing/
+RedirectMatch 301 ^/site-por-assinatura$ /site-por-assinatura/
 
 # HTTPS e sem www
 <IfModule mod_rewrite.c>
