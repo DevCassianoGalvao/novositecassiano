@@ -215,19 +215,41 @@ page_start($title, 'clientes', $admin);
 
 <?php if ($c): ?>
 <?php if ($c): ?>
-<div class="card">
+<div class="card" id="briefing">
   <h2>Briefing</h2>
-  <?php $brief = null; try { $brief = briefing_find((int) $c['id']); } catch (Throwable $e) {} ?>
-  <?php if ($brief): ?>
-    <p class="muted">Enviado em <?= h(fmt_dt($brief['created_at'])) ?><?= $brief['updated_at'] !== $brief['created_at'] ? ' · atualizado em ' . h(fmt_dt($brief['updated_at'])) : '' ?></p>
-    <dl class="kv">
-      <?php foreach (briefing_fields() as $k => [$label]): $v = (string) ($brief['fields'][$k] ?? ''); if ($v === '') continue; ?>
-        <dt><?= h($label) ?></dt><dd style="white-space:pre-wrap"><?= h($v) ?></dd>
-      <?php endforeach; ?>
-    </dl>
-  <?php else: ?>
-    <p class="muted">Ainda não preenchido. Link do cliente (abre depois do primeiro pagamento):</p>
-    <p><input readonly value="<?= h(briefing_url($c)) ?>" onclick="this.select()"></p>
+  <?php $brief = null; $bfiles = []; try { $brief = briefing_find((int) $c['id']); $bfiles = briefing_files((int) $c['id']); } catch (Throwable $e) {} ?>
+  <?php if (!$brief): ?>
+    <p class="muted">Ainda não começou. Link do cliente (abre depois do primeiro pagamento):</p>
+    <p><input readonly id="bflink" value="<?= h(briefing_url($c)) ?>" onclick="this.select()"></p>
+    <p><button type="button" class="btn btn--sm" data-copy="bflink">Copiar link</button></p>
+  <?php else:
+      $sent = $brief['status'] === 'enviado';
+      $deadline = $sent && $brief['submitted_at'] ? date('Y-m-d H:i:s', strtotime($brief['submitted_at'] . ' +48 hours')) : null; ?>
+    <p class="muted"><?= $sent ? 'Briefing enviado em <b>' . h(fmt_dt($brief['submitted_at'])) . '</b>. Prazo de 48h até <b>' . h(fmt_dt($deadline)) . '</b> (pausa enquanto a copy espera a aprovação do cliente).' : 'Em preenchimento, etapa ' . (int) $brief['step'] . ' de 9. Atualizado em ' . h(fmt_dt($brief['updated_at'])) . '.' ?></p>
+    <div class="actions" style="margin:10px 0 16px">
+      <button type="button" class="btn btn--primary btn--sm" data-copy="bftxt">Copiar tudo</button>
+      <a class="btn btn--sm" href="briefing-export.php?id=<?= (int) $c['id'] ?>&fmt=txt">Baixar .txt</a>
+      <?php if ($bfiles): ?><a class="btn btn--sm" href="briefing-export.php?id=<?= (int) $c['id'] ?>&fmt=zip">Baixar tudo (.zip com os arquivos)</a><?php endif; ?>
+      <?php if ($sent): ?><a class="btn btn--sm" target="_blank" rel="noopener" href="<?= h(wa_link($c['whatsapp'], 'Recebi tudo! Vou escrever a copy do seu site e te mando aqui pra aprovar.')) ?>">Avisar no WhatsApp</a><?php endif; ?>
+    </div>
+    <textarea id="bftxt" readonly style="position:absolute;left:-9999px"><?= h(briefing_text($c, $brief, $bfiles)) ?></textarea>
+    <?php foreach (briefing_sections($c, $brief, $bfiles) as [$title, $rows]): ?>
+      <h3 style="margin:18px 0 6px;font-size:16px"><?= h($title) ?></h3>
+      <dl class="kv">
+        <?php foreach ($rows as [$l, $v]): ?><dt><?= h($l) ?></dt><dd style="white-space:pre-wrap"><?= h($v) ?></dd><?php endforeach; ?>
+      </dl>
+    <?php endforeach; ?>
+    <?php if ($bfiles): ?>
+      <h3 style="margin:18px 0 6px;font-size:16px">Arquivos recebidos</h3>
+      <div class="table-wrap"><table class="t stack"><thead><tr><th>Campo</th><th>Arquivo</th><th>Tamanho</th><th></th></tr></thead><tbody>
+        <?php foreach ($bfiles as $field => $rows): foreach ($rows as $r): $isImg = in_array(strtolower(pathinfo($r['orig_name'], PATHINFO_EXTENSION)), ['png', 'jpg', 'jpeg', 'webp', 'gif'], true); ?>
+          <tr><td><?= h($field) ?></td>
+            <td><?php if ($isImg): ?><a href="arquivo.php?id=<?= (int) $r['id'] ?>&ver=1" target="_blank"><img src="arquivo.php?id=<?= (int) $r['id'] ?>&ver=1" alt="" style="height:38px;width:38px;object-fit:cover;border-radius:6px;vertical-align:middle;margin-right:8px"></a><?php endif; ?><?= h($r['orig_name']) ?></td>
+            <td><?= h(briefing_size((int) $r['size_bytes'])) ?></td>
+            <td><a class="btn btn--sm" href="arquivo.php?id=<?= (int) $r['id'] ?>">Baixar</a></td></tr>
+        <?php endforeach; endforeach; ?>
+      </tbody></table></div>
+    <?php endif; ?>
   <?php endif; ?>
 </div>
 <?php endif; ?>

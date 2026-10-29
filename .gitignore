@@ -5,3 +5,5 @@ node_modules/
 # respostas dos clientes ficam só no servidor
 briefing/respostas/*
 !briefing/respostas/.htaccess
+admin/storage/*
+!admin/storage/.htaccess

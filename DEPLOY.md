@@ -133,6 +133,11 @@ Os lembretes por e-mail (7 dias, 3 dias, no dia, atraso e suspensão) levam o bo
 
 Se você já tinha instalado o painel antes desta versão, abra `/admin/install.php` logado (ou o link em Configurações > Banco de dados) para aplicar a migração `002_portal_pix.sql`.
 
-### 8.9 Briefing e cancelamento pelo cliente
+### 8.9 Briefing (9 etapas) e cancelamento pelo cliente
 
-A migração `003_briefing.sql` cria a tabela do briefing: depois do deploy, abra `/admin/install.php` e clique em "Criar / atualizar tabelas". O cliente recebe o link do briefing no e-mail de pagamento confirmado e na página de pagamento (`/site-por-assinatura/pagar/?t=...`), onde também pode cancelar a assinatura sem precisar de conta. As respostas aparecem na ficha do cliente, no painel.
+As migrações `003_briefing.sql` e `004_briefing_etapas.sql` criam as tabelas do briefing e dos arquivos: depois do deploy, abra `/admin/install.php` e clique em "Criar / atualizar tabelas".
+
+- O cliente abre o briefing pelo link do e-mail "Assinatura confirmada" ou pela página de pagamento (`/site-por-assinatura/pagar/?t=...`). O progresso é salvo a cada etapa.
+- **Arquivos** (logo, fotos, copy etc.) ficam numa pasta por pedido, fora do site: por padrão `assinaturas-arquivos/` ao lado da pasta do domínio (na pasta inicial da conta). Para escolher outro lugar, defina `UPLOAD_DIR` no `.env`. Se nenhuma pasta for gravável, usa `admin/storage/` (protegida por `.htaccess`). O limite é 15 MB por arquivo; se o PHP do servidor tiver um limite menor, aumente `upload_max_filesize` e `post_max_size` no cPanel (MultiPHP INI Editor).
+- No painel, a ficha do cliente tem o relatório completo, "Copiar tudo", "Baixar .txt", "Baixar tudo (.zip)" e o download de cada arquivo. Você também recebe o relatório por e-mail, e o cliente recebe uma cópia.
+- O cliente cancela sozinho pela página de pagamento, sem conta.

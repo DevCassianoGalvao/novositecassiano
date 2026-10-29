@@ -205,8 +205,8 @@ $limit = $c && $c['next_due_date'] ? fmt_date(date('Y-m-d', strtotime($c['next_d
   <?php endif; ?>
 
   <?php if ($st === 'ativo' || $st === 'atraso'): ?>
-    <?php $hasBrief = false; try { $hasBrief = (bool) briefing_find((int) $c['id']); } catch (Throwable $e) {} ?>
-    <div class="box"><p style="margin:0 0 12px"><b><?= $hasBrief ? 'Briefing enviado.' : 'Falta o briefing do seu site.' ?></b> <?= $hasBrief ? 'Quer ajustar alguma resposta?' : 'São umas perguntas rápidas para eu começar.' ?></p>
+    <?php $hasBrief = false; try { $bq = briefing_find((int) $c['id']); $hasBrief = $bq && $bq['status'] === 'enviado'; } catch (Throwable $e) {} ?>
+    <div class="box"><p style="margin:0 0 12px"><b><?= $hasBrief ? 'Briefing enviado.' : 'Falta o briefing do seu site.' ?></b> <?= $hasBrief ? 'Quer ajustar alguma resposta?' : 'Leva uns 15 minutos e é o que eu preciso para começar o seu site.' ?></p>
       <a class="btn<?= $hasBrief ? ' btn--ghost' : '' ?>" href="../briefing/?t=<?= h($c['portal_token']) ?>"><?= $hasBrief ? 'Ver ou editar o briefing' : 'Preencher o briefing' ?></a></div>
   <?php endif; ?>
 
