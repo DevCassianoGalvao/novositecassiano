@@ -444,3 +444,43 @@ body.sa{font-size:18px}
   .sa-brand img{height:44px}
   .sa-pain--b{bottom:20%}
 }
+
+/* ---------- rodada de responsividade ---------- */
+@media (max-width:720px){
+  /* selo "Mais escolhido" acima do nome, sem encostar */
+  .sa-plan__badge{position:static;align-self:flex-start;margin-bottom:12px}
+  .sa-checks{max-width:260px}
+  .sa-g__r b{font-size:13.5px}
+}
+@media (max-width:480px){
+  /* cards da foto: menores e sem se sobrepor */
+  .sa-pain{font-size:11.5px;padding:7px 10px 7px 7px;border-radius:13px}
+  .sa-pain--b{max-width:160px;bottom:24%;right:-8px}
+  .sa-pain--c{bottom:3%;left:-8px}
+  .sa-serp{min-width:150px}
+  .sa-chat span{font-size:11.5px}
+}
+@media (max-width:420px){
+  .sa .hero__stats{grid-template-columns:auto auto auto;justify-content:space-between}
+  .sa .hero__stats li{padding:0 8px}
+  .sa .hero__stats strong{font-size:1.3rem}
+  .sa .hero__stats li > span{font-size:12px;line-height:1.25;letter-spacing:-.01em}
+  .sa-brand{gap:10px}
+  .sa-brand img{height:40px}
+  .sa-brand .sa-tag{font-size:9.5px;letter-spacing:.2em;padding:6px 10px}
+  .sa-h1{font-size:clamp(1.7rem,8.6vw,2.2rem)}
+  .sa-plan{padding:20px 18px}
+  .sa-plan__price b{font-size:2.8rem}
+  .sa-feats .is-off{flex-wrap:wrap;gap:4px}
+  .sa-opt{padding:16px}
+  .sa-m__title{font-size:1.35rem}
+}
+@media (max-width:350px){
+  .sa-pain--c{display:none}
+  .sa .hero__stats li > span{font-size:11.5px}
+}
+/* tablet: hero centralizado como no site principal, caixa e marca centradas */
+@media (min-width:721px) and (max-width:1000px){
+  .sa-brand{justify-content:center}
+  .sa-turn{margin-inline:auto}
+}
