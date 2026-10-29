@@ -69,6 +69,11 @@ if ($c && $c['status'] !== 'cancelado' && ($_SERVER['REQUEST_METHOD'] ?? '') ===
         } elseif ($act === 'pix') {
             [$ok, $r] = pix_for_customer($c);
             if ($ok) $pix = $r; else { $err = 'Não consegui gerar o Pix agora. Tente de novo ou fale comigo no WhatsApp.'; error_log('[pagar] pix: ' . $r); }
+        } elseif ($act === 'card' && cycle_months($c) > 1) {
+            [$ok, $info] = mp_generate_link($c);
+            if ($ok && $info !== '') { header('Location: ' . $info); exit; }
+            $err = 'Não consegui abrir o pagamento no cartão agora. Tente de novo ou fale comigo no WhatsApp.';
+            error_log('[pagar] card checkout: ' . $info);
         } elseif ($act === 'card') {
             if ($c['mp_init_point'] && $c['mp_status'] === 'pending') {
                 header('Location: ' . $c['mp_init_point']);
@@ -89,6 +94,21 @@ if ($c && $c['status'] !== 'cancelado' && ($_SERVER['REQUEST_METHOD'] ?? '') ===
         $err = 'Algo deu errado. Tente de novo em instantes.';
     }
     if ($c) $c = customer_find((int) $c['id']);
+}
+
+/* volta do checkout do cartão: confere o pagamento na hora (a confirmação também chega pelo webhook) */
+$backId = (string) ($_GET['payment_id'] ?? $_GET['collection_id'] ?? '');
+if ($c && ctype_digit($backId) && strlen($backId) < 30 && ($_SERVER['REQUEST_METHOD'] ?? '') === 'GET') {
+    try {
+        $res = pix_settle($backId);
+        if (strpos($res, 'cartão') === 0) {
+            $c = customer_find((int) $c['id']);
+            if ($res === 'cartão pago e registrado' || $res === 'cartão já registrado') $okmsg = 'Pagamento no cartão aprovado. Obrigado!';
+            elseif (in_array($res, ['cartão pending', 'cartão in_process'], true)) $okmsg = 'Seu pagamento no cartão está em análise no Mercado Pago. Assim que for aprovado, esta página atualiza e você recebe um e-mail.';
+        }
+    } catch (Throwable $e) {
+        error_log('[pagar] retorno cartão: ' . $e->getMessage());
+    }
 }
 
 $due = $c && $c['next_due_date'] ? fmt_date($c['next_due_date']) : null;
@@ -204,11 +224,14 @@ client_head('Sua assinatura');
       <?php if (!$auto): ?>
       <button class="opt" name="act" value="card" type="submit">
         <span class="opt__ic"><?= ic('card') ?></span>
-        <span><strong>Cartão de crédito <span class="pill pill--roxo">automático</span></strong><small><?= cycle_months($c) > 1 ? 'Cobra ' . h(money(cycle_amount($c))) . ' ' . h([3 => 'a cada 3 meses', 6 => 'a cada 6 meses', 12 => 'uma vez por ano'][cycle_months($c)]) . ' no cartão, sem você precisar lembrar.' : 'Cobra sozinho todo mês, sem você precisar lembrar.' ?> Pagamento seguro pelo Mercado Pago.</small></span>
+        <span><strong>Cartão de crédito <span class="pill pill--roxo"><?= cycle_months($c) > 1 ? 'até ' . min(12, cycle_months($c)) . 'x' : 'automático' ?></span></strong><small><?= cycle_months($c) > 1 ? h(money(cycle_amount($c))) . ' à vista ou em até ' . min(12, cycle_months($c)) . 'x no checkout seguro do Mercado Pago.' : 'Cobra sozinho todo mês, sem você precisar lembrar. Pagamento seguro pelo Mercado Pago.' ?></small></span>
         <?= ic('chevron', 'go') ?>
       </button>
       <?php endif; ?>
     </form>
+    <?php if (!$auto && cycle_months($c) > 1): ?>
+      <p class="fee in-up" style="--d:.24s"><?= ic('card') ?><span>No cartão à vista não há acréscimo. Se você parcelar, o Mercado Pago (gateway de pagamento) cobra os juros do parcelamento, e o valor de cada parcela aparece antes de você confirmar. No Pix, nunca há acréscimo.</span></p>
+    <?php endif; ?>
   <?php endif; ?>
 
   <?php if (($st === 'ativo' || $st === 'atraso') && !$pix): ?>

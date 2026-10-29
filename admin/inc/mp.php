@@ -156,3 +156,37 @@ function mp_cancel_payment(string $id): array
 {
     return mp_request('PUT', '/v1/payments/' . rawurlencode($id), ['status' => 'cancelled']);
 }
+
+/**
+ * Checkout do Mercado Pago para pagar um período (trimestral, semestral, anual) no cartão,
+ * à vista ou parcelado. Os juros do parcelamento ficam com o comprador (regra da conta no Mercado Pago).
+ */
+function mp_create_preference(array $c): array
+{
+    $months = cycle_months($c);
+    $amount = round(cycle_amount($c) / 100, 2);
+    $back = pay_url($c);
+    return mp_request('POST', '/checkout/preferences', [
+        'items' => [[
+            'id'          => 'assinatura-' . $c['id'],
+            'title'       => 'Site por assinatura · ' . $c['plan_name'] . ' · ' . cycle_name($c),
+            'quantity'    => 1,
+            'currency_id' => 'BRL',
+            'unit_price'  => $amount,
+        ]],
+        'payer'              => ['email' => $c['email'], 'name' => first_name($c['name'])],
+        'external_reference' => 'cp' . $c['id'],
+        'notification_url'   => app_url() . '/api/mp-webhook.php',
+        'back_urls'          => ['success' => $back, 'pending' => $back, 'failure' => $back],
+        'auto_return'        => 'approved',
+        'payment_methods'    => [
+            'excluded_payment_types' => [['id' => 'ticket'], ['id' => 'atm'], ['id' => 'bank_transfer']],
+            'installments'           => min(12, max(1, $months)),
+            'default_installments'   => 1,
+        ],
+        'statement_descriptor' => 'CASSIANOGALVAO',
+        'expires'              => true,
+        'expiration_date_to'   => date('Y-m-d\TH:i:s.000P', strtotime('+3 days')),
+    ]);
+}
+

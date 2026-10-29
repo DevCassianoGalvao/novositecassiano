@@ -183,7 +183,7 @@ function email_content(string $kind, array $c, array $v = []): array
                     $ctaWa];
             }
             return ["Sua mensalidade $quando",
-                $p("Oi, $first!") . $p("O pagamento de <b>$price</b> do seu <b>$plan</b> (" . h(mb_strtolower(cycle_name($c))) . ") $quando (<b>$due</b>).") . $p('Para manter o site no ar, é só pagar pelo link: <b>Pix</b> com QR Code (cai na hora) ou <b>cartão</b>, se preferir deixar a cobrança automática.'),
+                $p("Oi, $first!") . $p("O pagamento de <b>$price</b> do seu <b>$plan</b> (" . h(mb_strtolower(cycle_name($c))) . ") $quando (<b>$due</b>).") . $p(cycle_months($c) > 1 ? 'Para manter o site no ar, é só pagar pelo link: <b>Pix</b> com QR Code (cai na hora) ou <b>cartão</b>, à vista ou parcelado.' : 'Para manter o site no ar, é só pagar pelo link: <b>Pix</b> com QR Code (cai na hora) ou <b>cartão</b>, se preferir deixar a cobrança automática.'),
                 ['label' => 'Pagar agora', 'url' => $pay]];
         case 'atraso':
             $lim = h(fmt_date(date('Y-m-d', strtotime(($c['next_due_date'] ?? today()) . ' +' . tolerance_days() . ' day'))));
@@ -348,7 +348,7 @@ function apply_payment(array $c, int $amountCents, string $method, ?string $mpRe
     $months = $months && $months > 0 ? $months : cycle_months($c);
     $fields = ['next_due_date' => add_months($base, $months), 'status' => 'ativo', 'suspended_at' => null];
     if (empty($c['started_at'])) $fields['started_at'] = 'NOW()';
-    if ($method === 'pix' && !has_card_auto($c)) $fields['billing_mode'] = 'manual';
+    if (in_array($method, ['pix', 'cartao'], true) && !has_card_auto($c)) $fields['billing_mode'] = 'manual';
     customer_update((int) $c['id'], $fields);
     log_activity('pagamento', 'Pagamento recebido: ' . money($amountCents) . ' (' . ($method === 'manual' ? 'manual' : ($method === 'pix' ? 'Pix' : 'cartão')) . ')', (int) $c['id']);
 
@@ -463,6 +463,14 @@ function mp_handle_authorized_payment(string $apId): string
 function mp_generate_link(array $c): array
 {
     $c = customer_find((int) $c['id']);
+    // trimestral, semestral e anual: checkout do Mercado Pago (à vista ou parcelado, juros com o comprador)
+    if (cycle_months($c) > 1) {
+        $r = mp_create_preference($c);
+        $url = (string) ($r['body']['init_point'] ?? '');
+        if ($r['error'] !== '' || $url === '') return [false, $r['error'] !== '' ? $r['error'] : 'Resposta inesperada do Mercado Pago.'];
+        log_activity('mp', 'Link do cartão gerado (' . mb_strtolower(cycle_name($c)) . ', à vista ou parcelado)', (int) $c['id']);
+        return [true, $url];
+    }
     $start = (in_array($c['status'], ['ativo', 'atraso'], true) && $c['next_due_date'] && $c['next_due_date'] > today()) ? $c['next_due_date'] : null;
     $r = mp_create_preapproval($c, (string) $c['plan_name'], $start);
     if ($r['error'] !== '' || empty($r['body']['id'])) return [false, $r['error'] !== '' ? $r['error'] : 'Resposta inesperada do Mercado Pago.'];
@@ -567,7 +575,18 @@ function pix_settle(string $mpPaymentId): string
     $r = mp_get_payment($mpPaymentId);
     if ($r['error'] !== '') return 'erro: ' . $r['error'];
     $b = $r['body'];
-    if (($b['payment_method_id'] ?? '') !== 'pix') return 'ignorado (não é Pix)';
+    if (($b['payment_method_id'] ?? '') !== 'pix') {
+        // pagamento de período no cartão pelo checkout (external_reference "cp<id>")
+        if (!preg_match('/^cp(\d+)$/', (string) ($b['external_reference'] ?? ''), $cm)) return 'ignorado (não é Pix nem checkout)';
+        $cc = customer_find((int) $cm[1]);
+        if (!$cc) return 'cliente não encontrado';
+        if (($b['status'] ?? '') !== 'approved') return 'cartão ' . ($b['status'] ?? 'sem status');
+        $paidAt = !empty($b['date_approved']) ? date('Y-m-d H:i:s', (int) strtotime((string) $b['date_approved'])) : null;
+        $amount = (int) round(((float) ($b['transaction_amount'] ?? (cycle_amount($cc) / 100))) * 100);
+        $inst = (int) ($b['installments'] ?? 1);
+        $new = apply_payment($cc, $amount, 'cartao', 'pay_' . $mpPaymentId, today(), $paidAt, 'cartão' . ($inst > 1 ? ' em ' . $inst . 'x' : ' à vista'));
+        return $new ? 'cartão pago e registrado' : 'cartão já registrado';
+    }
     $status = (string) ($b['status'] ?? '');
     $row = q_one('SELECT * FROM pix_charges WHERE mp_payment_id = ?', [$mpPaymentId]);
     $c = null;

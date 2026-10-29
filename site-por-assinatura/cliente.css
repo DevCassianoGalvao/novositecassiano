@@ -175,6 +175,9 @@ p{margin:0 0 14px;color:var(--muted)}
 .note--bad{border:1px solid rgba(255,92,122,.4);background:rgba(255,92,122,.1);color:#ffc2cd}
 .note--ok{border:1px solid rgba(0,239,158,.4);background:rgba(0,239,158,.08);color:#b9ffe3}
 
+.fee{display:flex;gap:12px;align-items:flex-start;margin:14px 0 0;padding:13px 15px;border-radius:var(--r-md);font-size:14px;line-height:1.5;color:var(--muted);background:rgba(255,255,255,.03);border:1px solid var(--line)}
+.fee .ic{width:18px;height:18px;color:var(--roxo-claro);margin-top:1px}
+
 /* briefing (na página de pagamento) */
 .brief{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
 .brief__ic{display:grid;place-items:center;width:52px;height:52px;border-radius:16px;color:var(--verde);background:rgba(0,239,158,.1);border:1px solid rgba(0,239,158,.38)}

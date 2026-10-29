@@ -158,3 +158,8 @@ A migração `005_ciclos.sql` guarda o período de cada cliente: depois do deplo
 - O vencimento avança pelo período pago. Os lembretes (7, 3 e 0 dias) valem para o fim de cada período.
 - Os percentuais da página de pagamento e do painel ficam em Configurações > Regras de cobrança. Os da página de vendas estão no HTML (`assinatura.js`, `DISC`), então, se mudar lá, mude aqui também.
 - O briefing aceita até 100 MB de arquivos por cliente; acima disso ele cola um link (Drive, OneDrive...) no campo próprio.
+
+### 8.12 Cartão parcelado nos períodos
+
+- Mensal no cartão: assinatura automática do Mercado Pago (cobra todo mês, sem parcelas).
+- Trimestral, semestral e anual no cartão: abre o checkout do Mercado Pago com o valor do período, à vista ou em até 3x, 6x ou 12x. Os juros do parcelamento ficam com o cliente, desde que na sua conta do Mercado Pago o parcelamento esteja como "o comprador paga os juros" (não ofereça parcelamento sem juros). A renovação desses períodos é pelo link do lembrete, como no Pix.
