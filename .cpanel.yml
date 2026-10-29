@@ -14,3 +14,4 @@ deployment:
     - /bin/cp -Rf api $DEPLOYPATH
     - /bin/cp -Rf briefing $DEPLOYPATH
     - /bin/cp -Rf site-por-assinatura $DEPLOYPATH
+    - /bin/cp -Rf admin $DEPLOYPATH

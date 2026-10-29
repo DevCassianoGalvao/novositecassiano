@@ -5,7 +5,7 @@ O repositório fica numa pasta separada no servidor e o cPanel **copia só os ar
 O que vai para a pasta do domínio:
 
 ```
-index.html  robots.txt  sitemap.xml  .htaccess  assets/  api/  briefing/  site-por-assinatura/
+index.html  robots.txt  sitemap.xml  .htaccess  assets/  api/  briefing/  site-por-assinatura/  admin/
 ```
 
 ## 0. Antes de começar (uma vez só)
@@ -70,3 +70,55 @@ Toda vez que eu fizer push de alguma mudança, é só repetir os passos 2 e 3.
 - O pop-up de planos manda o lead por e-mail (Brevo, mesmo `.env`) pelo `api/assinatura.php`, com plano e UTMs. Assunto: "Site por assinatura: Nome quer o Completo".
 - Fase 2 (TODO no código): webhook de leads, checkout e evento InitiateCheckout.
 - A pergunta "Posso cancelar quando quiser?" está escondida até definir fidelidade e multa (comentário no HTML).
+
+## 8. Sistema de assinaturas (painel em /admin)
+
+Painel PHP + MySQL para receber os leads da página `/site-por-assinatura`, gerenciar clientes (ativos, aguardando pagamento, inativos), cobrar pelo Mercado Pago, mandar lembretes pela Brevo e cadastrar as tags (Pixel, GTM) só dessa página.
+
+### 8.1 Criar o banco (cPanel)
+1. cPanel > *Bancos de dados MySQL* > crie um banco (ex.: `cassiano_assin`). O cPanel coloca o prefixo da conta: o nome final fica `usuario_assin`.
+2. Na mesma tela, crie um usuário com senha forte e, em *Adicionar usuário ao banco*, marque **Todos os privilégios**.
+
+### 8.2 Preencher o `.env`
+Acrescente ao `.env` (o mesmo da Brevo; modelo no `.env.example`):
+
+```
+DB_HOST=localhost
+DB_NAME=usuario_assin
+DB_USER=usuario_user
+DB_PASS=a_senha_do_usuario
+APP_URL=https://cassianogalvao.com.br
+APP_KEY=uma-frase-longa-aleatoria-nunca-troque
+INSTALL_KEY=uma-senha-so-para-instalar
+CRON_KEY=letrasenumeros
+```
+`APP_KEY` protege o token do Mercado Pago dentro do banco (não troque depois). `INSTALL_KEY` só serve para liberar a instalação.
+
+### 8.3 Instalar (cria as tabelas e o seu acesso)
+1. Faça o deploy (passos 2 e 3 acima).
+2. Abra `https://cassianogalvao.com.br/admin/install.php`. A tela confere o servidor (tudo verde).
+3. Digite a `INSTALL_KEY`, clique em **Criar / atualizar tabelas** e depois crie seu usuário administrador (e-mail + senha de 10+ caracteres).
+4. Entre em `/admin`. Depois de instalado, o instalador trava sozinho.
+
+Sem painel? Também dá por terminal: `php admin/install.php migrate`.
+
+**Atualizações futuras do banco:** quando uma versão nova trouxer migrações (`admin/sql/00X_*.sql`), faça o deploy e abra `/admin/install.php` logado (ou use o link em Configurações > Banco de dados).
+
+### 8.4 Conectar o Mercado Pago
+No painel, *Configurações > Mercado Pago* tem o passo a passo: criar a aplicação no Mercado Pago Developers, colar o **Access Token de produção** e a **assinatura secreta** do webhook, e cadastrar a URL `https://cassianogalvao.com.br/api/mp-webhook.php` com os eventos de *Planos e assinaturas*. Clique em *Salvar e testar*.
+
+### 8.5 Agendar a rotina diária (lembretes e suspensão)
+cPanel > *Tarefas Cron* > 1x por dia (ex.: 9h), comando (copie o exato em Configurações > Rotina diária):
+
+```
+/usr/local/bin/php /home/USUARIO/cassianogalvao.com.br/admin/cron.php
+```
+Ela confere o Mercado Pago, manda lembretes (7 dias, 3 dias e no dia), dá 1 dia de tolerância, suspende e avisa você ("fulano não pagou"). Quem pagar depois volta sozinho, sem taxa.
+
+### 8.6 Tags (Pixel, GTM)
+`/admin > Rastreamento`. Valem só em `/site-por-assinatura/` (e na página de obrigado). Enquanto nada for salvo lá, a página continua com o Pixel 987681871022914.
+
+### 8.7 Conferir
+- `/admin` pede login; `/admin/inc/` e `/admin/sql/` dão **403**.
+- Preencha o formulário da página: o lead aparece em *Leads* e o e-mail chega.
+- Em *Configurações > E-mails* use "Enviar e-mail de teste".

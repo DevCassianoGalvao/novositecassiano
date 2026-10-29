@@ -1,9 +1,8 @@
 <?php
 /**
  * Lead do pop-up de planos da página /site-por-assinatura (fase 1).
- * Envia os dados por e-mail pela Brevo, com o mesmo .env do site.
- *
- * TODO (fase 2): substituir/complementar pelo webhook de leads e pelo checkout.
+ * Grava o lead no banco (aparece no painel /admin) e avisa por e-mail pela Brevo.
+ * Se o banco falhar, o e-mail continua sendo enviado (o lead nunca se perde).
  */
 
 declare(strict_types=1);
@@ -19,28 +18,7 @@ function respond(int $status, array $body): void
     exit;
 }
 
-function load_env(): void
-{
-    foreach ([dirname(__DIR__, 2) . '/.env', dirname(__DIR__) . '/.env'] as $file) {
-        if (!is_readable($file)) continue;
-        foreach (file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
-            $line = trim($line);
-            if ($line === '' || $line[0] === '#' || strpos($line, '=') === false) continue;
-            [$key, $value] = array_map('trim', explode('=', $line, 2));
-            $value = trim($value, "\"'");
-            if (getenv($key) === false) putenv("$key=$value");
-        }
-        return;
-    }
-}
-
-function env(string $key, string $default = ''): string
-{
-    $v = getenv($key);
-    return ($v === false || $v === '') ? $default : $v;
-}
-
-load_env();
+require dirname(__DIR__) . '/admin/inc/bootstrap.php';
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') respond(405, ['ok' => false, 'error' => 'Método não permitido.']);
 
@@ -78,11 +56,25 @@ if (mb_strlen($nome) < 2 || !preg_match('/^\d{10,13}$/', $whatsapp) || !filter_v
     respond(422, ['ok' => false, 'error' => 'Dados inválidos.']);
 }
 
+/* 1) grava no banco (painel) */
+$leadId = null;
+try {
+    if (db_ready()) {
+        q('INSERT INTO leads (name, whatsapp, email, plan_slug, status, source_page, utm, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
+            [$nome, $whatsapp, $email, $plano, 'novo', $pagina, $utm ? json_encode($utm, JSON_UNESCAPED_UNICODE) : null]);
+        $leadId = (int) db()->lastInsertId();
+        log_activity('lead', "Novo lead: $nome ({$planos[$plano]})", null, $leadId);
+    }
+} catch (Throwable $e) {
+    error_log('[assinatura] banco: ' . $e->getMessage());
+}
+
+/* 2) avisa por e-mail */
 $apiKey = env('BREVO_API_KEY');
-$to     = env('MAIL_TO');
+$to     = setting('admin_email', env('MAIL_TO'));
 if ($apiKey === '' || $to === '') {
     error_log('[assinatura] BREVO_API_KEY ou MAIL_TO não configurados.');
-    respond(500, ['ok' => false, 'error' => 'Envio não configurado.']);
+    respond($leadId ? 200 : 500, $leadId ? ['ok' => true] : ['ok' => false, 'error' => 'Envio não configurado.']);
 }
 
 $wa     = 'https://wa.me/' . (strlen($whatsapp) <= 11 ? '55' . $whatsapp : $whatsapp);
@@ -102,7 +94,9 @@ $html = '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;
     . $row('Recebido em', $h($quando));
 foreach ($utm as $k => $v) $html .= $row($h($k), $h($v));
 $html .= '</table>'
-    . '<div style="padding:20px 28px 28px"><a href="' . $h($wa) . '" style="display:inline-block;background:#00EF9E;color:#03140D;font-weight:bold;padding:12px 22px;border-radius:999px;text-decoration:none">Chamar no WhatsApp</a></div>'
+    . '<div style="padding:20px 28px 28px"><a href="' . $h($wa) . '" style="display:inline-block;background:#00EF9E;color:#03140D;font-weight:bold;padding:12px 22px;border-radius:999px;text-decoration:none">Chamar no WhatsApp</a>'
+    . ($leadId ? ' <a href="' . $h(app_url() . '/admin/leads.php') . '" style="display:inline-block;color:#A75FFF;font-weight:bold;padding:12px 14px;text-decoration:none">Abrir no painel</a>' : '')
+    . '</div>'
     . '<p style="margin:0;padding:0 28px 22px;font-size:12px;color:#6F6884">Página: ' . $h($pagina) . '</p></div>';
 
 $text = "Novo lead · site por assinatura\n\nNome: $nome\nWhatsApp: $whatsapp ($wa)\nE-mail: $email\nPlano: {$planos[$plano]}\nRecebido em: $quando\n";
@@ -118,7 +112,7 @@ $payload = [
     'tags'        => ['site-assinatura'],
 ];
 
-$ch = curl_init('https://api.brevo.com/v3/smtp/email');
+$ch = curl_init(env('BREVO_API_URL', 'https://api.brevo.com/v3/smtp/email'));
 curl_setopt_array($ch, [
     CURLOPT_POST           => true,
     CURLOPT_RETURNTRANSFER => true,
@@ -133,6 +127,7 @@ curl_close($ch);
 
 if ($st < 200 || $st >= 300) {
     error_log('[assinatura] Falha Brevo (' . $st . '): ' . ($err ?: (string) $res));
+    if ($leadId) respond(200, ['ok' => true]); // o lead está salvo no painel
     respond(502, ['ok' => false, 'error' => 'Não foi possível enviar agora.']);
 }
 respond(200, ['ok' => true]);

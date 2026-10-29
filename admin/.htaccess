@@ -1,0 +1,8 @@
+Options -Indexes
+DirectoryIndex index.php
+
+# Painel privado: nunca indexar
+<IfModule mod_headers.c>
+  Header set X-Robots-Tag "noindex, nofollow, noarchive"
+  Header set X-Frame-Options "DENY"
+</IfModule>

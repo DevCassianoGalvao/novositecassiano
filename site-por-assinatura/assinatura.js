@@ -14,7 +14,37 @@
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
   // os caminhos do data.js são relativos à raiz do site
   var asset = function (p) { return p && /^assets\//.test(p) ? '/' + p : p; };
-  var track = function (ev, params) { try { if (window.fbq) window.fbq('track', ev, params || {}); } catch (e) {} };
+  // Eventos: vão para o Pixel (assim que ele carregar) e para a dataLayer (Google Tag Manager).
+  // As tags são cadastradas no painel (/admin > Rastreamento) e carregadas por /api/tags.php.
+  var pendingEv = [], flushTimer = null;
+  var sendPixel = function (ev, params) {
+    if (window.fbq) { try { window.fbq('track', ev, params); } catch (e) {} return; }
+    pendingEv.push([ev, params]);
+    if (flushTimer) return;
+    var tries = 0;
+    flushTimer = setInterval(function () {
+      tries++;
+      if (window.fbq || tries > 40) {
+        clearInterval(flushTimer); flushTimer = null;
+        var q = pendingEv.splice(0);
+        if (window.fbq) q.forEach(function (a) { try { window.fbq('track', a[0], a[1]); } catch (e) {} });
+      }
+    }, 250);
+  };
+  var track = function (ev, params) {
+    params = params || {};
+    try {
+      window.dataLayer = window.dataLayer || [];
+      var dl = { event: ev };
+      Object.keys(params).forEach(function (k) { dl[k] = params[k]; });
+      window.dataLayer.push(dl);
+    } catch (e) {}
+    sendPixel(ev, params);
+  };
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href*="wa.me"]');
+    if (a) track('Contact', { content_name: 'WhatsApp · site por assinatura' });
+  });
 
   var ano = $('#ano');
   if (ano) ano.textContent = new Date().getFullYear();
@@ -422,10 +452,9 @@
 
     track('Lead', { content_name: 'Plano ' + PLANS[chosen].nome, currency: 'BRL', value: PLANS[chosen].preco });
 
-    // TODO (fase 2): enviar { nome, whatsapp, email, plano, utm_* } para o webhook de leads.
     // TODO (fase 2): redirecionar para o checkout do gateway com plano e dados pré-preenchidos,
     //                disparando track('InitiateCheckout', { value, currency: 'BRL' }) antes do redirect.
-    // Fase 1: o lead vai por e-mail (Brevo) pelo api/assinatura.php e mostra a tela de sucesso provisória.
+    // O lead é gravado no banco (painel /admin) e avisado por e-mail pelo api/assinatura.php.
     submitBtn.classList.add('is-loading');
     $('.btn__label', submitBtn).textContent = 'Enviando...';
     var finish = function () {

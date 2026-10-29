@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Assinatura recebida · Cassiano Galvão</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#07060B">
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Space+Grotesk:wght@400;500;700&display=swap">
+<style>
+  :root{--bg:#07060B;--roxo:#8928FF;--roxo-claro:#A75FFF;--verde:#00EF9E;--txt:#ECE8F6;--muted:#A49DB8}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(900px 520px at 50% -10%,rgba(137,40,255,.35),transparent 62%),var(--bg);color:var(--txt);font:19px/1.6 'Space Grotesk',system-ui,sans-serif}
+  main{width:100%;max-width:560px;text-align:center}
+  .ok{width:78px;height:78px;border-radius:50%;margin:0 auto 22px;display:grid;place-items:center;background:rgba(0,239,158,.12);box-shadow:0 0 0 1px rgba(0,239,158,.4),0 0 60px rgba(0,239,158,.25)}
+  .ok svg{width:38px;height:38px;stroke:var(--verde);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+  h1{font-size:clamp(30px,6vw,42px);line-height:1.1;margin:0 0 14px;letter-spacing:-.02em}
+  h1 em{font-style:normal;color:var(--verde)}
+  p{margin:0 0 14px;color:var(--muted)}
+  .hand{font-family:'Caveat',cursive;font-size:30px;color:var(--roxo-claro);margin:6px 0 26px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;min-height:54px;padding:14px 30px;border-radius:99px;background:var(--verde);color:#03140D;font-weight:700;font-size:18px;text-decoration:none}
+  .btn:hover{filter:brightness(1.08)}
+  .back{display:block;margin-top:22px;color:var(--muted);font-size:16px}
+</style>
+</head>
+<body>
+<main>
+  <div class="ok"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+  <h1>Assinatura <em>recebida!</em></h1>
+  <p>Assim que o Mercado Pago confirmar o pagamento, você recebe um e-mail de confirmação e eu te chamo no WhatsApp para começarmos o seu site.</p>
+  <p class="hand">Bora tirar seu site do papel.</p>
+  <a class="btn" href="https://wa.me/5522997560717?text=Oi%2C%20Cassiano!%20Acabei%20de%20assinar%20o%20site%20por%20assinatura.">Falar com o Cassiano</a>
+  <a class="back" href="/site-por-assinatura/">Voltar para a página</a>
+</main>
+<script defer src="/api/tags.php"></script>
+<script>
+/* Evento de assinatura (1x por assinatura) para o Pixel e o Tag Manager */
+(function () {
+  var id = new URLSearchParams(location.search).get('preapproval_id') || 'x';
+  var key = 'sa_sub_' + id, fired = false;
+  try { fired = !!localStorage.getItem(key); } catch (e) {}
+  if (fired) return;
+  var n = 0, t = setInterval(function () {
+    n++;
+    window.dataLayer = window.dataLayer || [];
+    if (window.fbq || n > 40) {
+      clearInterval(t);
+      try { window.dataLayer.push({ event: 'Subscribe', currency: 'BRL' }); } catch (e) {}
+      try { if (window.fbq) window.fbq('track', 'Subscribe', { currency: 'BRL' }); } catch (e) {}
+      try { localStorage.setItem(key, '1'); } catch (e) {}
+    }
+  }, 250);
+})();
+</script>
+</body>
+</html>
