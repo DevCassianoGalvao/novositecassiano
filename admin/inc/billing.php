@@ -31,6 +31,40 @@ function customer_by_token(string $t): ?array
     return $r ? customer_find((int) $r['id']) : null;
 }
 
+/** Campos do briefing: chave => [rótulo, tipo, obrigatório, dica]. */
+function briefing_fields(): array
+{
+    return [
+        'negocio'    => ['Nome do negócio (ou o seu nome)', 'text', true, ''],
+        'ramo'       => ['O que você faz?', 'area', true, 'Conte em poucas frases, como se estivesse explicando para um cliente novo.'],
+        'servicos'   => ['Principais serviços ou produtos', 'area', false, 'Uma linha por item.'],
+        'cidade'     => ['Cidade ou região onde você atua', 'text', false, ''],
+        'publico'    => ['Quem é o seu cliente ideal?', 'area', false, ''],
+        'diferencial'=> ['Por que escolhem você e não a concorrência?', 'area', false, ''],
+        'objetivo'   => ['O que o site precisa fazer?', 'select', false, 'Receber contatos no WhatsApp|Mostrar portfólio ou trabalhos|Vender produtos|Receber agendamentos|Apresentar a empresa|Outro'],
+        'contato'    => ['WhatsApp e e-mail que vão aparecer no site', 'text', true, ''],
+        'redes'      => ['Instagram e outras redes (links ou @)', 'text', false, ''],
+        'estilo'     => ['Cores e estilo que você gosta', 'text', false, 'Ex.: moderno e escuro, clean e claro, colorido, sério...'],
+        'referencias'=> ['Sites que você gosta de referência', 'area', false, 'Cole os links, um por linha.'],
+        'materiais'  => ['Link com logo e fotos (Drive, Dropbox...)', 'text', false, 'Se não tiver agora, pode mandar depois pelo WhatsApp.'],
+        'dominio'    => ['Você já tem domínio (endereço .com.br)? Qual?', 'text', false, ''],
+        'obs'        => ['Mais alguma coisa que eu precise saber?', 'area', false, ''],
+    ];
+}
+
+function briefing_find(int $customerId): ?array
+{
+    $r = q_one('SELECT * FROM briefings WHERE customer_id = ?', [$customerId]);
+    if (!$r) return null;
+    $r['fields'] = json_decode((string) $r['data'], true) ?: [];
+    return $r;
+}
+
+function briefing_url(array $c): string
+{
+    return app_url() . '/site-por-assinatura/briefing/?t=' . $c['portal_token'];
+}
+
 function pay_url(array $c): string
 {
     return app_url() . '/site-por-assinatura/pagar/?t=' . $c['portal_token'];
@@ -118,8 +152,8 @@ function email_content(string $kind, array $c, array $v = []): array
                 ['label' => 'Escolher como pagar', 'url' => $pay]];
         case 'welcome':
             return ['Assinatura confirmada!',
-                $p("Oi, $first! Recebi seu pagamento de <b>$price</b>.") . $p('Seu site já entrou na minha fila. Vou te chamar no WhatsApp para alinharmos o briefing e começar.') . $p("A próxima cobrança será em <b>$due</b>."),
-                $ctaWa];
+                $p("Oi, $first! Recebi seu pagamento de <b>$price</b>.") . $p('Seu site já entrou na minha fila. Para eu começar, preciso do <b>briefing</b>: umas perguntinhas rápidas sobre o seu negócio (leva uns 5 minutos).') . $p("A próxima cobrança será em <b>$due</b>."),
+                ['label' => 'Preencher o briefing', 'url' => briefing_url($c)]];
         case 'pago':
             return ['Pagamento recebido',
                 $p("Oi, $first! Recebi o pagamento de <b>$price</b>. Obrigado!") . $p("Seu próximo vencimento é em <b>$due</b>."), null];

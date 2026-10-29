@@ -23,6 +23,7 @@ try {
 
 $wa = wa_link($c ? admin_wa() : '5522997560717', 'Oi, Cassiano! Preciso de ajuda com o pagamento da minha assinatura.');
 $err = null;
+$okmsg = null;
 $pix = null;
 
 /* limite simples por IP: 12 ações a cada 10 min */
@@ -42,6 +43,14 @@ if ($c && $c['status'] !== 'cancelado' && ($_SERVER['REQUEST_METHOD'] ?? '') ===
     try {
         if (!pay_rate_ok()) {
             $err = 'Muitas tentativas. Aguarde alguns minutos.';
+        } elseif ($act === 'cancel') {
+            if (($_POST['confirm'] ?? '') !== '1') {
+                $err = 'Confirme o cancelamento para continuar.';
+            } else {
+                $m = cancel_customer($c, 'cancelado pelo cliente na página de pagamento');
+                $okmsg = $m === '' ? 'Pronto, sua assinatura foi cancelada. Não haverá novas cobranças.' : 'Cancelei aqui, mas o cartão ainda precisa ser desvinculado. Já avisei o Cassiano, que resolve isso com você.';
+                if ($m !== '') error_log('[pagar] cancel: ' . $m);
+            }
         } elseif (!mp_connected()) {
             $err = 'O pagamento online ainda não está disponível. Fale com o Cassiano pelo WhatsApp.';
         } elseif ($act === 'pix') {
@@ -113,6 +122,14 @@ $limit = $c && $c['next_due_date'] ? fmt_date(date('Y-m-d', strtotime($c['next_d
   .ok .tick{width:78px;height:78px;border-radius:50%;margin:0 auto 18px;display:grid;place-items:center;background:rgba(0,239,158,.12);box-shadow:0 0 0 1px rgba(0,239,158,.4),0 0 60px rgba(0,239,158,.25)}
   .ok svg{width:38px;height:38px;stroke:var(--verde);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
   .small{font-size:16px}
+  .okmsg{padding:14px 16px;border-radius:14px;margin-bottom:16px;font-size:17px;border:1px solid rgba(0,239,158,.4);background:rgba(0,239,158,.08);color:#b9ffe3}
+  .safe{display:flex;gap:12px;align-items:flex-start;background:rgba(0,239,158,.06);border:1px solid rgba(0,239,158,.28);border-radius:16px;padding:14px 16px;margin:0 0 16px;color:var(--txt);font-size:17px}
+  .safe i{font-style:normal;color:var(--verde);font-weight:700}
+  details.cancel{margin-top:22px;border-top:1px solid var(--line);padding-top:16px}
+  details.cancel summary{cursor:pointer;color:var(--muted);font-size:16px}
+  details.cancel .btn{background:transparent;border:1px solid rgba(255,92,122,.5);color:var(--bad);min-height:48px;font-size:16px}
+  details.cancel label{display:flex;gap:10px;align-items:flex-start;color:var(--txt);font-size:16px;margin:12px 0}
+  details.cancel input{margin-top:5px}
   .foot{text-align:center;margin-top:26px;font-size:16px}
   .foot a{color:var(--roxo-claro)}
   @media(max-width:420px){.copy{flex-direction:column}.copy .btn{width:100%}}
@@ -144,6 +161,11 @@ $limit = $c && $c['next_due_date'] ? fmt_date(date('Y-m-d', strtotime($c['next_d
   </div>
 
   <?php if ($err): ?><p class="aviso"><?= h($err) ?></p><?php endif; ?>
+  <?php if ($okmsg): ?><p class="okmsg"><?= h($okmsg) ?></p><?php endif; ?>
+
+  <?php if ($st === 'pendente' || $st === 'atraso' || $st === 'suspenso'): ?>
+    <p class="safe"><i>✓</i><span><b>Sem fidelidade.</b> Você pode cancelar quando quiser, aqui mesmo nesta página, sem precisar de conta nem falar comigo. Cancelou, não é cobrado de novo.</span></p>
+  <?php endif; ?>
 
   <?php if ($st === 'cancelado'): ?>
     <a class="btn" href="<?= h($wa) ?>">Falar com o Cassiano</a>
@@ -161,6 +183,7 @@ $limit = $c && $c['next_due_date'] ? fmt_date(date('Y-m-d', strtotime($c['next_d
         <div class="tick"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
         <h1 style="font-size:32px">Pagamento confirmado!</h1>
         <p>Obrigado, <?= h(first_name($c['name'])) ?>. Está tudo certo com a sua assinatura. Te aviso por e-mail antes do próximo vencimento.</p>
+        <a class="btn" href="../briefing/?t=<?= h($c['portal_token']) ?>">Preencher o briefing do meu site</a>
       </div>
     </div>
     <form method="post"><input type="hidden" name="t" value="<?= h($c['portal_token']) ?>"><button class="btn btn--ghost" name="act" value="card">Prefiro pagar no cartão</button></form>
@@ -175,10 +198,28 @@ $limit = $c && $c['next_due_date'] ? fmt_date(date('Y-m-d', strtotime($c['next_d
       <?php if (!has_card_auto($c)): ?>
       <button class="opt" name="act" value="card" type="submit">
         <strong>Cartão de crédito</strong>
-        <span>Cobrança automática todo mês, sem precisar lembrar. Pagamento seguro pelo Mercado Pago.</span>
+        <span>Cobrança automática todo mês, sem precisar lembrar. Pagamento seguro pelo Mercado Pago. Você cancela quando quiser, direto nesta página.</span>
       </button>
       <?php endif; ?>
     </form>
+  <?php endif; ?>
+
+  <?php if ($st === 'ativo' || $st === 'atraso'): ?>
+    <?php $hasBrief = false; try { $hasBrief = (bool) briefing_find((int) $c['id']); } catch (Throwable $e) {} ?>
+    <div class="box"><p style="margin:0 0 12px"><b><?= $hasBrief ? 'Briefing enviado.' : 'Falta o briefing do seu site.' ?></b> <?= $hasBrief ? 'Quer ajustar alguma resposta?' : 'São umas perguntas rápidas para eu começar.' ?></p>
+      <a class="btn<?= $hasBrief ? ' btn--ghost' : '' ?>" href="../briefing/?t=<?= h($c['portal_token']) ?>"><?= $hasBrief ? 'Ver ou editar o briefing' : 'Preencher o briefing' ?></a></div>
+  <?php endif; ?>
+
+  <?php if (in_array($st, ['ativo', 'atraso', 'suspenso'], true) && !$pix): ?>
+    <details class="cancel">
+      <summary>Quero cancelar minha assinatura</summary>
+      <form method="post">
+        <input type="hidden" name="t" value="<?= h($c['portal_token']) ?>">
+        <p class="small" style="margin:12px 0 0">Ao cancelar, as próximas cobranças param<?= has_card_auto($c) ? ' e a cobrança automática do cartão é encerrada' : '' ?>, e seu site será desativado.</p>
+        <label><input type="checkbox" name="confirm" value="1" required> Entendi e quero cancelar</label>
+        <button class="btn" name="act" value="cancel" type="submit">Cancelar assinatura</button>
+      </form>
+    </details>
   <?php endif; ?>
 
   <p class="foot">Dúvida? <a href="<?= h($wa) ?>">Fale comigo no WhatsApp</a></p>

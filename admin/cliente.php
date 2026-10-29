@@ -214,6 +214,24 @@ page_start($title, 'clientes', $admin);
 </div>
 
 <?php if ($c): ?>
+<?php if ($c): ?>
+<div class="card">
+  <h2>Briefing</h2>
+  <?php $brief = null; try { $brief = briefing_find((int) $c['id']); } catch (Throwable $e) {} ?>
+  <?php if ($brief): ?>
+    <p class="muted">Enviado em <?= h(fmt_dt($brief['created_at'])) ?><?= $brief['updated_at'] !== $brief['created_at'] ? ' · atualizado em ' . h(fmt_dt($brief['updated_at'])) : '' ?></p>
+    <dl class="kv">
+      <?php foreach (briefing_fields() as $k => [$label]): $v = (string) ($brief['fields'][$k] ?? ''); if ($v === '') continue; ?>
+        <dt><?= h($label) ?></dt><dd style="white-space:pre-wrap"><?= h($v) ?></dd>
+      <?php endforeach; ?>
+    </dl>
+  <?php else: ?>
+    <p class="muted">Ainda não preenchido. Link do cliente (abre depois do primeiro pagamento):</p>
+    <p><input readonly value="<?= h(briefing_url($c)) ?>" onclick="this.select()"></p>
+  <?php endif; ?>
+</div>
+<?php endif; ?>
+
 <div class="card">
   <h2>Pagamentos</h2>
   <?php if (!$pays): ?><p class="empty">Nenhum pagamento ainda.</p><?php else: ?>

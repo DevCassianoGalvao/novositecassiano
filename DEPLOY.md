@@ -132,3 +132,7 @@ Nessa página ele escolhe:
 Os lembretes por e-mail (7 dias, 3 dias, no dia, atraso e suspensão) levam o botão "Pagar agora" para essa página. Quem paga por Pix recebe o lembrete todo mês e paga de novo pelo mesmo link; quem pagou no Pix pode trocar para o cartão a qualquer momento.
 
 Se você já tinha instalado o painel antes desta versão, abra `/admin/install.php` logado (ou o link em Configurações > Banco de dados) para aplicar a migração `002_portal_pix.sql`.
+
+### 8.9 Briefing e cancelamento pelo cliente
+
+A migração `003_briefing.sql` cria a tabela do briefing: depois do deploy, abra `/admin/install.php` e clique em "Criar / atualizar tabelas". O cliente recebe o link do briefing no e-mail de pagamento confirmado e na página de pagamento (`/site-por-assinatura/pagar/?t=...`), onde também pode cancelar a assinatura sem precisar de conta. As respostas aparecem na ficha do cliente, no painel.
