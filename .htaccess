@@ -35,6 +35,8 @@ RedirectMatch 301 ^/admin$ /admin/
 
 <IfModule mod_headers.c>
   Header set X-Content-Type-Options "nosniff"
+  # navegador passa a usar sempre HTTPS neste domínio
+  Header always set Strict-Transport-Security "max-age=31536000"
   Header set Referrer-Policy "strict-origin-when-cross-origin"
   # HTML sempre revalida: atualização aparece na hora depois do deploy
   <FilesMatch "\.html$">

@@ -26,34 +26,35 @@ $rows = q_all("SELECT c.*, p.name AS plan_name FROM customers c JOIN plans p ON 
 
 page_start('Clientes', 'clientes', $admin);
 ?>
-<div class="head"><div><p class="eyebrow">Assinantes</p><h1>Clientes</h1></div>
-  <div class="actions"><a class="btn btn--primary" href="cliente.php?id=0">Novo cliente</a></div></div>
+<?php page_head('Clientes', 'Todos os assinantes, separados pela situação da assinatura.', '<a class="btn btn--primary" href="cliente.php?id=0">' . ic('plus') . '<span>Novo cliente</span></a>'); ?>
 
+<div class="toolbar">
 <div class="tabs">
   <?php foreach ($tabs as $k => [$label]): ?>
     <a href="clientes.php?t=<?= $k ?>" class="<?= $t === $k ? 'is-on' : '' ?>"><?= h($label) ?><span class="n"><?= $counts[$k] ?></span></a>
   <?php endforeach; ?>
 </div>
 
-<form method="get" class="card" style="padding:14px 16px">
+<form method="get" role="search">
   <input type="hidden" name="t" value="<?= h($t) ?>">
-  <div class="copy"><input type="search" name="q" value="<?= h($qs) ?>" placeholder="Buscar por nome, negócio, e-mail ou WhatsApp"><button class="btn">Buscar</button></div>
+  <label class="search"><?= ic('search') ?><input type="search" name="q" value="<?= h($qs) ?>" placeholder="Buscar por nome, negócio, e-mail ou WhatsApp" aria-label="Buscar clientes"></label><button class="btn">Buscar</button>
 </form>
+</div>
 
 <div class="card">
-<?php if (!$rows): ?><p class="empty">Nenhum cliente nesta aba.</p><?php else: ?>
+<?php if (!$rows): ?><div class="empty"><span class="chip"><?= ic('users') ?></span><b><?= $qs !== '' ? 'Nada encontrado' : 'Ninguém nesta aba' ?></b><span><?= $qs !== '' ? 'Tente outro nome, e-mail ou número.' : 'Quando alguém entrar nesta situação, aparece aqui.' ?></span></div><?php else: ?>
 <div class="table-wrap"><table class="t stack">
   <thead><tr><th>Cliente</th><th>Plano</th><th>Status</th><th>Vencimento</th><th>Site</th><th></th></tr></thead>
   <tbody>
   <?php foreach ($rows as $c):
       $d = $c['next_due_date'] ? days_between(today(), $c['next_due_date']) : null; ?>
     <tr>
-      <td data-l="Cliente"><a class="row" href="cliente.php?id=<?= $c['id'] ?>"><?= h($c['name']) ?></a><?= $c['business'] ? '<br><small class="muted">' . h($c['business']) . '</small>' : '' ?></td>
-      <td data-l="Plano"><?= h(str_replace('Plano ', '', $c['plan_name'])) ?> · <?= h(money((int) $c['price_cents'])) ?></td>
+      <td data-l="Cliente"><a class="who" href="cliente.php?id=<?= $c['id'] ?>"><?= avatar($c['name'], 'av--sm') ?><span><b><?= h($c['name']) ?></b><small><?= h($c['business'] ?: $c['email']) ?></small></span></a></td>
+      <td data-l="Plano"><?= h(str_replace('Plano ', '', $c['plan_name'])) ?><br><small class="muted num"><?= h(money((int) $c['price_cents'])) ?>/mês</small></td>
       <td data-l="Status"><?= badge($c['status']) ?></td>
       <td data-l="Vencimento"><?= $c['next_due_date'] ? h(fmt_date($c['next_due_date'])) . ($d !== null && in_array($c['status'], ['ativo', 'atraso'], true) ? '<br><small class="muted">' . ($d > 0 ? "em $d dia(s)" : ($d === 0 ? 'hoje' : 'atrasado ' . (-$d) . ' dia(s)')) . '</small>' : '') : '—' ?></td>
-      <td data-l="Site"><?= $c['site_url'] ? '<a href="' . h($c['site_url']) . '" target="_blank" rel="noopener">abrir</a>' : '—' ?></td>
-      <td class="r" data-l=""><a class="btn btn--sm" href="cliente.php?id=<?= $c['id'] ?>">Abrir</a></td>
+      <td data-l="Site"><?= $c['site_url'] ? '<a class="iconbtn" href="' . h($c['site_url']) . '" target="_blank" rel="noopener" aria-label="Abrir o site">' . ic('globe') . '</a>' : '—' ?></td>
+      <td class="r" data-l=""><a class="btn btn--sm" href="cliente.php?id=<?= $c['id'] ?>"><span>Abrir</span><?= ic('chevron') ?></a></td>
     </tr>
   <?php endforeach; ?>
   </tbody></table></div>

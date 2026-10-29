@@ -7,6 +7,8 @@
 declare(strict_types=1);
 
 date_default_timezone_set('America/Sao_Paulo');
+// erros vão para o log do servidor, nunca para a tela do visitante
+if (PHP_SAPI !== 'cli') { ini_set('display_errors', '0'); ini_set('log_errors', '1'); }
 mb_internal_encoding('UTF-8');
 
 define('ADMIN_DIR', dirname(__DIR__));
@@ -250,9 +252,22 @@ function log_activity(string $kind, string $message, ?int $customerId = null, ?i
     }
 }
 
+/** IP do visitante. Só confia no cabeçalho da Cloudflare se TRUST_CLOUDFLARE=1 no .env (senão qualquer um forja). */
 function client_ip(): string
 {
-    return $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? 'x';
+    if (env('TRUST_CLOUDFLARE') === '1' && !empty($_SERVER['HTTP_CF_CONNECTING_IP'])) return (string) $_SERVER['HTTP_CF_CONNECTING_IP'];
+    return (string) ($_SERVER['REMOTE_ADDR'] ?? 'x');
+}
+
+/** Cabeçalhos de proteção para páginas privadas (painel, pagamento, briefing). */
+function security_headers(): void
+{
+    if (headers_sent()) return;
+    header('X-Frame-Options: DENY');
+    header("Content-Security-Policy: frame-ancestors 'none'; base-uri 'self'");
+    header('X-Content-Type-Options: nosniff');
+    header('Referrer-Policy: no-referrer');
+    header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
 }
 
 /* ---------- Sessão, login e CSRF (painel) ---------- */
@@ -270,6 +285,8 @@ function session_boot(): void
         'samesite' => 'Lax',
     ]);
     ini_set('session.gc_maxlifetime', '43200');
+    ini_set('session.use_strict_mode', '1');
+    ini_set('session.use_only_cookies', '1');
     session_start();
 }
 
@@ -299,6 +316,14 @@ function current_admin(): ?array
 {
     session_boot();
     if (empty($_SESSION['admin_id'])) return null;
+    // expira depois de 8 horas sem uso
+    $last = (int) ($_SESSION['seen'] ?? 0);
+    if ($last && time() - $last > 8 * 3600) {
+        $_SESSION = [];
+        session_regenerate_id(true);
+        return null;
+    }
+    $_SESSION['seen'] = time();
     static $a = false;
     if ($a === false) $a = q_one('SELECT id, name, email FROM admins WHERE id = ?', [(int) $_SESSION['admin_id']]);
     return $a;
@@ -307,6 +332,7 @@ function current_admin(): ?array
 function require_login(): array
 {
     header('Cache-Control: no-store');
+    security_headers();
     $a = null;
     try {
         $a = db_ready() ? current_admin() : null;

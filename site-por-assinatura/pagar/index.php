@@ -1,17 +1,18 @@
 <?php
 /**
- * Página de pagamento do cliente: Pix (QR Code) ou cartão (cobrança automática).
- * Acesso por link único com token (enviado por e-mail/WhatsApp pelo painel).
+ * Página pessoal do cliente: paga (Pix com QR Code ou cartão recorrente), vê a assinatura,
+ * abre o briefing e cancela. Acesso pelo link único com token (enviado nos e-mails).
  */
 
 declare(strict_types=1);
 
 require dirname(__DIR__, 2) . '/admin/inc/bootstrap.php';
 require dirname(__DIR__, 2) . '/admin/inc/billing.php';
+require dirname(__DIR__, 2) . '/admin/inc/layout.php';
 
 header('Cache-Control: no-store');
 header('X-Robots-Tag: noindex, nofollow');
-header('Referrer-Policy: no-referrer');
+security_headers();
 
 $c = null;
 $fatal = null;
@@ -21,7 +22,7 @@ try {
     $fatal = 'Sistema indisponível no momento. Tente de novo em instantes.';
 }
 
-$wa = wa_link($c ? admin_wa() : '5522997560717', 'Oi, Cassiano! Preciso de ajuda com o pagamento da minha assinatura.');
+$wa = wa_link($c ? admin_wa() : '5522997560717', 'Oi, Cassiano! Preciso de ajuda com a minha assinatura do site.');
 $err = null;
 $okmsg = null;
 $pix = null;
@@ -42,13 +43,15 @@ if ($c && $c['status'] !== 'cancelado' && ($_SERVER['REQUEST_METHOD'] ?? '') ===
     $act = (string) ($_POST['act'] ?? '');
     try {
         if (!pay_rate_ok()) {
-            $err = 'Muitas tentativas. Aguarde alguns minutos.';
+            $err = 'Muitas tentativas seguidas. Aguarde alguns minutos e tente de novo.';
         } elseif ($act === 'cancel') {
-            if (($_POST['confirm'] ?? '') !== '1') {
-                $err = 'Confirme o cancelamento para continuar.';
+            if (!in_array($c['status'], ['ativo', 'atraso', 'suspenso'], true)) {
+                $err = 'Não há assinatura ativa para cancelar.';
+            } elseif (($_POST['confirm'] ?? '') !== '1') {
+                $err = 'Marque a confirmação para cancelar.';
             } else {
-                $m = cancel_customer($c, 'cancelado pelo cliente na página de pagamento');
-                $okmsg = $m === '' ? 'Pronto, sua assinatura foi cancelada. Não haverá novas cobranças.' : 'Cancelei aqui, mas o cartão ainda precisa ser desvinculado. Já avisei o Cassiano, que resolve isso com você.';
+                $m = cancel_customer($c, 'cancelado pelo cliente na página dele');
+                $okmsg = $m === '' ? 'Sua assinatura foi cancelada. Não haverá novas cobranças.' : 'Cancelei por aqui. O cartão ainda precisa ser desvinculado e o Cassiano já foi avisado para resolver com você.';
                 if ($m !== '') error_log('[pagar] cancel: ' . $m);
             }
         } elseif (!mp_connected()) {
@@ -80,163 +83,148 @@ if ($c && $c['status'] !== 'cancelado' && ($_SERVER['REQUEST_METHOD'] ?? '') ===
 
 $due = $c && $c['next_due_date'] ? fmt_date($c['next_due_date']) : null;
 $limit = $c && $c['next_due_date'] ? fmt_date(date('Y-m-d', strtotime($c['next_due_date'] . ' +' . tolerance_days() . ' day'))) : null;
-?><!doctype html>
-<html lang="pt-BR">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Pagamento da assinatura · Cassiano Galvão</title>
-<meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#07060B">
-<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Space+Grotesk:wght@400;500;700&display=swap">
-<style>
-  :root{--bg:#07060B;--card:#120F1D;--roxo:#8928FF;--roxo-claro:#A75FFF;--verde:#00EF9E;--txt:#ECE8F6;--muted:#A49DB8;--line:rgba(236,232,246,.14);--bad:#FF5C7A;--warn:#FFC24B}
-  *{box-sizing:border-box}
-  body{margin:0;min-height:100vh;padding:28px 18px 60px;background:radial-gradient(900px 520px at 50% -10%,rgba(137,40,255,.35),transparent 62%),var(--bg);color:var(--txt);font:19px/1.55 'Space Grotesk',system-ui,sans-serif}
-  main{width:100%;max-width:560px;margin:0 auto}
-  .eyebrow{font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--verde);margin:6px 0 10px;font-weight:700}
-  h1{font-size:clamp(30px,6vw,40px);line-height:1.1;margin:0 0 18px;letter-spacing:-.02em}
-  p{margin:0 0 14px;color:var(--muted)}
-  .box{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px 22px;margin-bottom:18px}
-  .box b{color:var(--txt)}
-  .plan{display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px}
-  .plan strong{font-size:22px}
-  .badge{display:inline-block;padding:3px 12px;border-radius:99px;font-size:15px;font-weight:700}
-  .b-ok{background:rgba(0,239,158,.12);color:var(--verde)} .b-warn{background:rgba(255,194,75,.14);color:var(--warn)} .b-bad{background:rgba(255,92,122,.14);color:var(--bad)} .b-mute{background:rgba(164,157,184,.14);color:var(--muted)}
-  .opts{display:grid;gap:14px}
-  .opt{width:100%;text-align:left;cursor:pointer;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px 22px;color:var(--txt);font:inherit;transition:.15s}
-  .opt:hover{border-color:var(--verde);transform:translateY(-1px)}
-  .opt strong{display:block;font-size:22px;margin-bottom:4px}
-  .opt span{color:var(--muted);font-size:17px;display:block}
-  .opt--pix{border-color:rgba(0,239,158,.5);box-shadow:0 0 40px rgba(0,239,158,.1)}
-  .opt .tag{display:inline-block;font-size:13px;font-weight:700;color:#03140D;background:var(--verde);border-radius:99px;padding:2px 10px;margin-left:8px;vertical-align:middle}
-  .qr{text-align:center}
-  .qr img{width:min(280px,100%);height:auto;background:#fff;padding:12px;border-radius:16px;margin:6px auto 14px;display:block}
-  .copy{display:flex;gap:8px;margin:10px 0}
-  .copy input{flex:1;min-width:0;font:15px ui-monospace,Menlo,monospace;color:var(--txt);background:#0E0B17;border:1px solid var(--line);border-radius:12px;padding:12px}
-  .btn{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:12px 24px;border-radius:99px;background:var(--verde);color:#03140D;font:700 18px 'Space Grotesk',sans-serif;border:0;cursor:pointer;text-decoration:none}
-  .btn--ghost{background:transparent;color:var(--txt);border:1px solid var(--line)}
-  .aviso{padding:14px 16px;border-radius:14px;margin-bottom:16px;font-size:17px;border:1px solid rgba(255,92,122,.4);background:rgba(255,92,122,.1);color:#ffc2cd}
-  .ok{text-align:center;padding:26px 10px}
-  .ok .tick{width:78px;height:78px;border-radius:50%;margin:0 auto 18px;display:grid;place-items:center;background:rgba(0,239,158,.12);box-shadow:0 0 0 1px rgba(0,239,158,.4),0 0 60px rgba(0,239,158,.25)}
-  .ok svg{width:38px;height:38px;stroke:var(--verde);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
-  .small{font-size:16px}
-  .okmsg{padding:14px 16px;border-radius:14px;margin-bottom:16px;font-size:17px;border:1px solid rgba(0,239,158,.4);background:rgba(0,239,158,.08);color:#b9ffe3}
-  .safe{display:flex;gap:12px;align-items:flex-start;background:rgba(0,239,158,.06);border:1px solid rgba(0,239,158,.28);border-radius:16px;padding:14px 16px;margin:0 0 16px;color:var(--txt);font-size:17px}
-  .safe i{font-style:normal;color:var(--verde);font-weight:700}
-  details.cancel{margin-top:22px;border-top:1px solid var(--line);padding-top:16px}
-  details.cancel summary{cursor:pointer;color:var(--muted);font-size:16px}
-  details.cancel .btn{background:transparent;border:1px solid rgba(255,92,122,.5);color:var(--bad);min-height:48px;font-size:16px}
-  details.cancel label{display:flex;gap:10px;align-items:flex-start;color:var(--txt);font-size:16px;margin:12px 0}
-  details.cancel input{margin-top:5px}
-  .foot{text-align:center;margin-top:26px;font-size:16px}
-  .foot a{color:var(--roxo-claro)}
-  @media(max-width:420px){.copy{flex-direction:column}.copy .btn{width:100%}}
-</style>
-</head>
+$sp = fn(string $cls = '') => '<svg viewBox="0 0 100 100" class="' . $cls . '" aria-hidden="true"><use href="#i-spark"/></svg>';
+
+client_head('Sua assinatura');
+?>
 <body>
-<main>
+<?= client_token_guard((bool) $c) ?>
+<?= icon_sprite() ?><?= client_bg() ?>
+<main class="page">
+  <header class="bar">
+    <a href="/" aria-label="Cassiano Galvão"><img src="/assets/img/logo.svg" alt="Cassiano Galvão" width="104" height="42"></a>
+    <span class="tag"><?= ic('lock') ?>Pagamento seguro</span>
+  </header>
+
 <?php if ($fatal): ?>
-  <p class="eyebrow">Site por assinatura</p><h1>Ops</h1><p><?= h($fatal) ?></p>
+  <div class="hi in-up"><h1>Ops</h1><p><?= h($fatal) ?></p></div>
 <?php elseif (!$c): ?>
-  <p class="eyebrow">Site por assinatura</p>
-  <h1>Link não encontrado</h1>
-  <p>Esse link de pagamento não existe ou foi trocado. Fale comigo que eu te mando o certo.</p>
-  <a class="btn" href="<?= h($wa) ?>">Falar com o Cassiano</a>
+  <div class="hi in-up"><h1>Link não encontrado</h1><p>Esse link não existe ou foi trocado. Me chama no WhatsApp que eu te mando o certo.</p></div>
+  <a class="btn btn--green" href="<?= h($wa) ?>"><?= ic('chat') ?>Falar com o Cassiano</a>
 <?php else:
     $st = $c['status'];
-    $badge = ['pendente' => ['Aguardando pagamento', 'warn'], 'ativo' => ['Em dia', 'ok'], 'atraso' => ['Em aberto', 'warn'], 'suspenso' => ['Site fora do ar', 'bad'], 'cancelado' => ['Cancelada', 'mute']][$st] ?? ['', 'mute']; ?>
-  <p class="eyebrow">Site por assinatura</p>
-  <h1>Olá, <?= h(first_name($c['name'])) ?></h1>
-
-  <div class="box">
-    <div class="plan"><strong><?= h($c['plan_name']) ?></strong><span class="badge b-<?= $badge[1] ?>"><?= h($badge[0]) ?></span></div>
-    <p style="margin:0"><b><?= h(money((int) $c['price_cents'])) ?></b> por mês
-      <?php if ($st === 'pendente'): ?><br>Escolha abaixo como pagar a primeira mensalidade.
-      <?php elseif ($st === 'ativo'): ?><br>Tudo certo. Próximo vencimento em <b><?= h((string) $due) ?></b>.<?= has_card_auto($c) ? ' Cobrança automática no cartão.' : '' ?>
-      <?php elseif ($st === 'atraso'): ?><br>Venceu em <b><?= h((string) $due) ?></b>. Pague até <b><?= h((string) $limit) ?></b> para o site não sair do ar.
-      <?php elseif ($st === 'suspenso'): ?><br>Seu site está fora do ar. Pagou, volta na hora, <b>sem taxa nenhuma</b>.
-      <?php else: ?><br>Esta assinatura foi cancelada. Fale comigo se quiser voltar.<?php endif; ?></p>
+    $badge = ['pendente' => ['Aguardando pagamento', 'warn'], 'ativo' => ['Em dia', 'ok'], 'atraso' => ['Em aberto', 'warn'], 'suspenso' => ['Site fora do ar', 'bad'], 'cancelado' => ['Cancelada', 'mute']][$st] ?? ['', 'mute'];
+    $auto = has_card_auto($c);
+    $hasBrief = false;
+    try { $bq = briefing_find((int) $c['id']); $hasBrief = $bq && $bq['status'] === 'enviado'; } catch (Throwable $e) {}
+    $intro = [
+        'pendente'  => 'Falta só um passo para o seu site entrar na fila: escolher como pagar.',
+        'ativo'     => 'Aqui você acompanha a sua assinatura.',
+        'atraso'    => 'Sua mensalidade está em aberto. Dá para resolver agora em um minuto.',
+        'suspenso'  => 'Seu site está fora do ar por falta de pagamento. Pagou, ele volta na hora.',
+        'cancelado' => 'Esta assinatura foi cancelada.',
+    ][$st] ?? ''; ?>
+  <div class="hi in-up">
+    <h1>Olá, <?= h(first_name($c['name'])) ?></h1>
+    <p><?= h($intro) ?></p>
   </div>
 
-  <?php if ($err): ?><p class="aviso"><?= h($err) ?></p><?php endif; ?>
-  <?php if ($okmsg): ?><p class="okmsg"><?= h($okmsg) ?></p><?php endif; ?>
+  <section class="glass plan in-up" style="--d:.08s" aria-label="Sua assinatura">
+    <div class="plan__top">
+      <div>
+        <span class="plan__name"><?= h($c['plan_name']) ?></span>
+        <div class="plan__price"><b><?= h(money((int) $c['price_cents'])) ?></b><span>por mês</span></div>
+        <span class="badge b-<?= $badge[1] ?>"><?= h($badge[0]) ?></span>
+      </div>
+      <div class="plan__orb" aria-hidden="true"><i></i><?= $sp() ?></div>
+    </div>
+    <?php if ($st === 'ativo'): ?><p class="plan__msg">Próximo vencimento em <b><?= h((string) $due) ?></b>.<?= $auto ? ' Cobrança automática no cartão.' : ' Você recebe um lembrete por e-mail antes.' ?></p>
+    <?php elseif ($st === 'atraso'): ?><p class="plan__msg">Venceu em <b><?= h((string) $due) ?></b>. Pague até <b><?= h((string) $limit) ?></b> para o site não sair do ar.</p>
+    <?php elseif ($st === 'suspenso'): ?><p class="plan__msg">Pagou, o site volta na hora, <b>sem taxa nenhuma</b>.</p>
+    <?php endif; ?>
+  </section>
 
-  <?php if ($st === 'pendente' || $st === 'atraso' || $st === 'suspenso'): ?>
-    <p class="safe"><i>✓</i><span><b>Sem fidelidade.</b> Você pode cancelar quando quiser, aqui mesmo nesta página, sem precisar de conta nem falar comigo. Cancelou, não é cobrado de novo.</span></p>
-  <?php endif; ?>
+  <?php if ($err): ?><p class="note note--bad" role="alert"><?= ic('alert') ?><span><?= h($err) ?></span></p><?php endif; ?>
+  <?php if ($okmsg): ?><p class="note note--ok" role="status"><?= ic('check') ?><span><?= h($okmsg) ?></span></p><?php endif; ?>
 
   <?php if ($st === 'cancelado'): ?>
-    <a class="btn" href="<?= h($wa) ?>">Falar com o Cassiano</a>
+    <a class="btn btn--green btn--block" href="<?= h($wa) ?>"><?= ic('chat') ?>Quero voltar a assinar</a>
 
   <?php elseif ($pix): ?>
-    <div class="box qr" id="pixBox" data-t="<?= h($c['portal_token']) ?>" data-id="<?= (int) $pix['id'] ?>" data-value="<?= h((string) round($pix['amount_cents'] / 100, 2)) ?>">
+    <section class="glass pix in-up" id="pixBox" data-t="<?= h($c['portal_token']) ?>" data-id="<?= (int) $pix['id'] ?>" data-value="<?= h((string) round($pix['amount_cents'] / 100, 2)) ?>" aria-live="polite">
       <div id="pixWait">
-        <p style="color:var(--txt);margin-bottom:4px"><b>Pague <?= h(money((int) $pix['amount_cents'])) ?> com Pix</b></p>
-        <?php if ($pix['qr_base64']): ?><img alt="QR Code do Pix" src="data:image/png;base64,<?= h($pix['qr_base64']) ?>"><?php endif; ?>
-        <p class="small">Abra o app do seu banco, escolha <b>Pix</b> e <b>Ler QR Code</b>. Ou use o Pix <b>Copia e Cola</b>:</p>
-        <div class="copy"><input id="pixcode" readonly value="<?= h($pix['qr_code']) ?>"><button type="button" class="btn" id="pixcopy">Copiar</button></div>
-        <p class="small" style="margin:12px 0 0">Vale até <?= h(fmt_dt($pix['expires_at'])) ?>. Assim que você pagar, esta tela confirma sozinha e seu site é liberado.</p>
+        <h2>Pague com Pix</h2>
+        <p class="pix__val">Valor: <b><?= h(money((int) $pix['amount_cents'])) ?></b></p>
+        <?php if ($pix['qr_base64']): ?><div class="qr"><img alt="QR Code do Pix" width="244" height="244" src="data:image/png;base64,<?= h($pix['qr_base64']) ?>"></div><?php endif; ?>
+        <ol class="steps">
+          <li><span>1</span><em>Abra o app do seu banco e escolha <b>Pix</b>.</em></li>
+          <li><span>2</span><em>Leia o QR Code ou use o <b>Pix Copia e Cola</b>.</em></li>
+          <li><span>3</span><em>Confirme. Esta tela atualiza sozinha.</em></li>
+        </ol>
+        <div class="copy"><input id="pixcode" readonly value="<?= h($pix['qr_code']) ?>" aria-label="Código Pix Copia e Cola"><button type="button" class="btn btn--green btn--sm" id="pixcopy"><?= ic('copy') ?><span>Copiar código</span></button></div>
+        <span class="wait"><i></i>Aguardando o pagamento</span>
+        <span class="pix__exp">O código vale até <?= h(fmt_dt($pix['expires_at'])) ?>.</span>
       </div>
-      <div id="pixDone" class="ok" hidden>
-        <div class="tick"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
-        <h1 style="font-size:32px">Pagamento confirmado!</h1>
-        <p>Obrigado, <?= h(first_name($c['name'])) ?>. Está tudo certo com a sua assinatura. Te aviso por e-mail antes do próximo vencimento.</p>
-        <a class="btn" href="../briefing/?t=<?= h($c['portal_token']) ?>">Preencher o briefing do meu site</a>
+      <div id="pixDone" class="done" hidden>
+        <div class="tick"><svg class="ok" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><?= $sp('sp sp1') ?><?= $sp('sp sp2') ?><?= $sp('sp sp3') ?></div>
+        <h1>Pagamento confirmado!</h1>
+        <p>Obrigado, <?= h(first_name($c['name'])) ?>. Agora me conta sobre o seu negócio para eu começar o seu site.</p>
+        <a class="btn btn--green btn--block" href="../briefing/?t=<?= h($c['portal_token']) ?>"><?= ic('file') ?>Preencher o briefing</a>
       </div>
-    </div>
-    <form method="post"><input type="hidden" name="t" value="<?= h($c['portal_token']) ?>"><button class="btn btn--ghost" name="act" value="card">Prefiro pagar no cartão</button></form>
+    </section>
+    <?php if (!$auto): ?><form method="post"><input type="hidden" name="t" value="<?= h($c['portal_token']) ?>"><button class="btn btn--ghost btn--block" name="act" value="card"><?= ic('card') ?>Prefiro pagar no cartão</button></form><?php endif; ?>
 
   <?php else: ?>
-    <form method="post" class="opts">
+    <?php if ($st !== 'ativo'): ?>
+      <p class="safe in-up" style="--d:.14s"><?= ic('shield') ?><span><b>Sem fidelidade.</b> Você pode cancelar quando quiser, pelo link que chega no seu e-mail, sem precisar de conta nem falar comigo. Cancelou, não é cobrado de novo.</span></p>
+    <?php endif; ?>
+    <div class="sec in-up" style="--d:.18s"><h2><?= $st === 'ativo' ? 'Forma de pagamento' : 'Como você quer pagar?' ?></h2><?php if ($st === 'ativo'): ?><span><?= $auto ? 'cartão automático' : 'Pix todo mês' ?></span><?php endif; ?></div>
+    <?php if ($st === 'ativo'): ?><p class="in-up" style="--d:.2s;font-size:15px;margin-top:-4px"><?= $auto ? 'Está tudo certo. Se quiser, você pode adiantar a próxima mensalidade pelo Pix.' : 'Está tudo certo. Se quiser parar de pagar todo mês, deixe a cobrança automática no cartão.' ?></p><?php endif; ?>
+    <form method="post" class="opts in-up" style="--d:.22s">
       <input type="hidden" name="t" value="<?= h($c['portal_token']) ?>">
       <button class="opt opt--pix" name="act" value="pix" type="submit">
-        <strong>Pagar com Pix <span class="tag">na hora</span></strong>
-        <span>Gera o QR Code aqui mesmo. Pagou, seu site é liberado automaticamente. Todo mês você recebe um lembrete com o link.</span>
+        <span class="opt__ic"><?= ic('qr') ?></span>
+        <span><strong><?= $st === 'ativo' ? 'Adiantar com Pix' : 'Pix' ?> <span class="pill">na hora</span></strong><small>O QR Code aparece aqui mesmo. Pagou, está liberado. Todo mês chega um lembrete com o link.</small></span>
+        <?= ic('chevron', 'go') ?>
       </button>
-      <?php if (!has_card_auto($c)): ?>
+      <?php if (!$auto): ?>
       <button class="opt" name="act" value="card" type="submit">
-        <strong>Cartão de crédito</strong>
-        <span>Cobrança automática todo mês, sem precisar lembrar. Pagamento seguro pelo Mercado Pago. Você cancela quando quiser, direto nesta página.</span>
+        <span class="opt__ic"><?= ic('card') ?></span>
+        <span><strong>Cartão de crédito <span class="pill pill--roxo">automático</span></strong><small>Cobra sozinho todo mês, sem você precisar lembrar. Pagamento seguro pelo Mercado Pago.</small></span>
+        <?= ic('chevron', 'go') ?>
       </button>
       <?php endif; ?>
     </form>
   <?php endif; ?>
 
-  <?php if ($st === 'ativo' || $st === 'atraso'): ?>
-    <?php $hasBrief = false; try { $bq = briefing_find((int) $c['id']); $hasBrief = $bq && $bq['status'] === 'enviado'; } catch (Throwable $e) {} ?>
-    <div class="box"><p style="margin:0 0 12px"><b><?= $hasBrief ? 'Briefing enviado.' : 'Falta o briefing do seu site.' ?></b> <?= $hasBrief ? 'Quer ajustar alguma resposta?' : 'Leva uns 15 minutos e é o que eu preciso para começar o seu site.' ?></p>
-      <a class="btn<?= $hasBrief ? ' btn--ghost' : '' ?>" href="../briefing/?t=<?= h($c['portal_token']) ?>"><?= $hasBrief ? 'Ver ou editar o briefing' : 'Preencher o briefing' ?></a></div>
+  <?php if (($st === 'ativo' || $st === 'atraso') && !$pix): ?>
+    <section class="glass box brief in-up" style="--d:.26s;margin-top:22px">
+      <span class="brief__ic"><?= ic($hasBrief ? 'check' : 'file') ?></span>
+      <span class="brief__t"><b><?= $hasBrief ? 'Briefing enviado' : 'Falta o briefing do seu site' ?></b><span><?= $hasBrief ? 'Lembrou de algo? Dá para ajustar as respostas.' : 'Leva uns 15 minutos e é o que eu preciso para começar.' ?></span></span>
+      <a class="btn <?= $hasBrief ? 'btn--ghost' : 'btn--green' ?> btn--sm" href="../briefing/?t=<?= h($c['portal_token']) ?>"><?= $hasBrief ? 'Ver ou editar' : 'Preencher agora' ?></a>
+    </section>
   <?php endif; ?>
 
   <?php if (in_array($st, ['ativo', 'atraso', 'suspenso'], true) && !$pix): ?>
     <details class="cancel">
-      <summary>Quero cancelar minha assinatura</summary>
-      <form method="post">
+      <summary><?= ic('ban') ?>Quero cancelar minha assinatura</summary>
+      <form method="post" class="in">
         <input type="hidden" name="t" value="<?= h($c['portal_token']) ?>">
-        <p class="small" style="margin:12px 0 0">Ao cancelar, as próximas cobranças param<?= has_card_auto($c) ? ' e a cobrança automática do cartão é encerrada' : '' ?>, e seu site será desativado.</p>
+        <p>Ao cancelar, as próximas cobranças param<?= $auto ? ' e a cobrança automática do cartão é encerrada' : '' ?>, e o seu site é desativado. Se mudar de ideia, é só me chamar.</p>
         <label><input type="checkbox" name="confirm" value="1" required> Entendi e quero cancelar</label>
-        <button class="btn" name="act" value="cancel" type="submit">Cancelar assinatura</button>
+        <button class="btn btn--danger btn--sm" name="act" value="cancel" type="submit"><?= ic('ban') ?>Cancelar assinatura</button>
       </form>
     </details>
   <?php endif; ?>
-
-  <p class="foot">Dúvida? <a href="<?= h($wa) ?>">Fale comigo no WhatsApp</a></p>
 <?php endif; ?>
+
+  <footer class="foot">
+    <a href="<?= h($wa) ?>"><?= ic('chat') ?>Dúvida? Fale comigo no WhatsApp</a>
+    <small><?= ic('lock') ?>Pagamentos processados pelo Mercado Pago</small>
+  </footer>
 </main>
-<script defer src="/api/tags.php"></script>
 <script>
 (function(){
   var b=document.getElementById('pixcopy'),i=document.getElementById('pixcode');
   if(b&&i)b.addEventListener('click',function(){
-    var done=function(){var o=b.textContent;b.textContent='Copiado!';setTimeout(function(){b.textContent=o;},1800)};
-    if(navigator.clipboard)navigator.clipboard.writeText(i.value).then(done,function(){i.select()});else{i.select();try{document.execCommand('copy');done()}catch(e){}}
+    var l=b.querySelector('span'),done=function(){var o=l.textContent;l.textContent='Copiado!';setTimeout(function(){l.textContent=o},1800)};
+    if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(i.value).then(done,function(){i.select()});else{i.select();try{document.execCommand('copy');done()}catch(e){}}
   });
+  document.querySelectorAll('form').forEach(function(f){f.addEventListener('submit',function(e){var s=e.submitter;if(s&&s.classList.contains('opt')){s.setAttribute('aria-busy','true');s.style.opacity='.7';}})});
   var box=document.getElementById('pixBox'); if(!box)return;
   var t=box.getAttribute('data-t'),id=box.getAttribute('data-id'),tries=0,stop=false;
   function paid(){
-    stop=true;document.getElementById('pixWait').hidden=true;document.getElementById('pixDone').hidden=false;window.scrollTo(0,0);
+    stop=true;document.getElementById('pixWait').hidden=true;document.getElementById('pixDone').hidden=false;window.scrollTo({top:0,behavior:'smooth'});
     var v=parseFloat(box.getAttribute('data-value'))||0;
     try{window.dataLayer=window.dataLayer||[];window.dataLayer.push({event:'Purchase',value:v,currency:'BRL'})}catch(e){}
     try{if(window.fbq)window.fbq('track','Purchase',{value:v,currency:'BRL'})}catch(e){}
@@ -250,5 +238,6 @@ $limit = $c && $c['next_due_date'] ? fmt_date(date('Y-m-d', strtotime($c['next_d
   setTimeout(poll,4000);
 })();
 </script>
+<script defer src="/api/tags.php"></script>
 </body>
 </html>

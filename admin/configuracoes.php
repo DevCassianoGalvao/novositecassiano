@@ -80,6 +80,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 flash('Senha alterada.');
                 break;
             case 'admin_add':
+                $me = q_one('SELECT password_hash FROM admins WHERE id = ?', [(int) $admin['id']]);
+                if (!$me || !password_verify((string) ($_POST['current'] ?? ''), $me['password_hash'])) { flash('Para adicionar alguém, confirme a sua senha atual.', 'bad'); break; }
                 $n = clean_text($_POST['name'] ?? '', 80);
                 $e = mb_strtolower(clean_text($_POST['email'] ?? '', 160));
                 $pw = (string) ($_POST['password'] ?? '');
@@ -110,18 +112,20 @@ $brevoOk = env('BREVO_API_KEY') !== '';
 
 page_start('Configurações', 'configuracoes', $admin);
 ?>
-<div class="head"><div><p class="eyebrow">Ajustes do sistema</p><h1>Configurações</h1></div></div>
+<?php page_head('Configurações', 'Conexões, regras de cobrança, e-mails e acessos do painel.'); ?>
+<nav class="jump" aria-label="Seções">
+  <a href="#mp"><?= ic('card') ?>Mercado Pago</a><a href="#email"><?= ic('mail') ?>E-mails</a><a href="#regras"><?= ic('shield') ?>Regras</a><a href="#planos"><?= ic('wallet') ?>Planos</a><a href="#cron"><?= ic('clock') ?>Rotina diária</a><a href="#conta"><?= ic('lock') ?>Acessos</a>
+</nav>
 
-<?php if ($cronLog): ?><div class="card"><h2>Resultado da rotina</h2><div class="code-block"><?= h(implode("\n", $cronLog)) ?></div></div><?php endif; ?>
+<?php if ($cronLog): ?><div class="card"><?= card_head('Resultado da rotina', 'activity') ?><div class="code-block"><?= h(implode("\n", $cronLog)) ?></div></div><?php endif; ?>
 
 <!-- Mercado Pago -->
 <div class="card" id="mp">
-  <h2>Mercado Pago <?= $token !== '' ? '<span class="badge badge--ok">conectado</span>' : '<span class="badge badge--warn">não conectado</span>' ?>
-    <?= ($token !== '' && mp_is_test_token($token)) ? '<span class="badge badge--warn">modo teste</span>' : '' ?></h2>
-  <?php if ($tokenErr): ?><p class="aviso aviso--bad"><?= h($tokenErr) ?> Defina <code>APP_KEY</code> no .env.</p><?php endif; ?>
-  <?php if ($who): ?><p class="aviso aviso--<?= $who['error'] === '' ? 'ok' : 'bad' ?>"><?= $who['error'] === '' ? 'Conta: ' . h(($who['body']['nickname'] ?? '') . ' ' . ($who['body']['email'] ?? '')) : h($who['error']) ?></p><?php endif; ?>
+  <?= card_head('Mercado Pago', 'card', ($token !== '' ? '<span class="badge badge--ok">conectado</span>' : '<span class="badge badge--warn">não conectado</span>') . (($token !== '' && mp_is_test_token($token)) ? ' <span class="badge badge--warn">modo teste</span>' : '')) ?>
+  <?php if ($tokenErr): ?><p class="aviso aviso--bad"><?= ic('alert') ?><?= h($tokenErr) ?> Defina <code>APP_KEY</code> no .env.</p><?php endif; ?>
+  <?php if ($who): ?><p class="aviso aviso--<?= $who['error'] === '' ? 'ok' : 'bad' ?>"><?= ic($who['error'] === '' ? 'check' : 'alert') ?><?= $who['error'] === '' ? 'Conta: ' . h(($who['body']['nickname'] ?? '') . ' ' . ($who['body']['email'] ?? '')) : h($who['error']) ?></p><?php endif; ?>
 
-  <details class="card" style="background:var(--card-2)">
+  <details class="fold">
     <summary>Passo a passo para conectar (leva 5 minutos)</summary>
     <ol class="small" style="display:grid;gap:8px;padding-left:20px;margin:14px 0 0">
       <li>Entre em <b>mercadopago.com.br/developers</b> com a sua conta e vá em <b>Suas integrações</b>. Clique em <b>Criar aplicação</b> (nome livre, ex.: "Site por assinatura"; tipo <b>Pagamentos online</b>).</li>
@@ -133,19 +137,19 @@ page_start('Configurações', 'configuracoes', $admin);
   </details>
 
   <p class="lbl" style="margin-top:6px">URL do webhook (cole no Mercado Pago)</p>
-  <div class="copy" style="margin-bottom:16px"><input id="whurl" readonly value="<?= h($webhookUrl) ?>"><button type="button" class="btn" data-copy="whurl">Copiar</button></div>
+  <div class="copy" style="margin-bottom:16px"><input id="whurl" readonly value="<?= h($webhookUrl) ?>"><button type="button" class="btn" data-copy="whurl"><?= ic('copy') ?><span>Copiar</span></button></div>
 
   <form method="post" class="form" autocomplete="off">
     <?= csrf_field() ?><input type="hidden" name="act" value="mp_save">
     <label>Access Token <input type="password" name="mp_token" placeholder="<?= $token !== '' ? '•••••••• guardado (deixe vazio para manter)' : 'APP_USR-...' ?>" autocomplete="off"></label>
     <label>Assinatura secreta do webhook <input type="password" name="mp_secret" placeholder="<?= setting('mp_webhook_secret') !== '' ? '•••••••• guardada (deixe vazio para manter)' : 'opcional, mas recomendado' ?>" autocomplete="off"></label>
     <div class="actions">
-      <button class="btn btn--primary">Salvar e testar</button>
-      <?php if ($token !== ''): ?><a class="btn" href="configuracoes.php?check=1#mp">Testar conexão</a><?php endif; ?>
+      <button class="btn btn--primary"><?= ic('zap') ?><span>Salvar e testar</span></button>
+      <?php if ($token !== ''): ?><a class="btn" href="configuracoes.php?check=1#mp"><?= ic('refresh') ?><span>Testar conexão</span></a><?php endif; ?>
     </div>
   </form>
   <?php if ($token !== ''): ?>
-    <form method="post" data-confirm="Desconectar o Mercado Pago? Os links já gerados continuam valendo, mas o painel para de falar com ele." style="margin-top:12px"><?= csrf_field() ?><input type="hidden" name="act" value="mp_disconnect"><button class="btn btn--sm btn--danger">Desconectar</button></form>
+    <form method="post" data-confirm="Desconectar o Mercado Pago? Os links já gerados continuam valendo, mas o painel para de falar com ele." style="margin-top:12px"><?= csrf_field() ?><input type="hidden" name="act" value="mp_disconnect"><button class="btn btn--sm btn--danger"><?= ic('power') ?><span>Desconectar</span></button></form>
   <?php endif; ?>
 
   <?php if ($lastHooks): ?>
@@ -159,7 +163,7 @@ page_start('Configurações', 'configuracoes', $admin);
 
 <!-- E-mails -->
 <div class="card" id="email">
-  <h2>E-mails (Brevo) <?= $brevoOk ? '<span class="badge badge--ok">chave encontrada</span>' : '<span class="badge badge--bad">sem BREVO_API_KEY</span>' ?></h2>
+  <?= card_head('E-mails (Brevo)', 'mail', $brevoOk ? '<span class="badge badge--ok">chave encontrada</span>' : '<span class="badge badge--bad">sem BREVO_API_KEY</span>') ?>
   <p class="small muted">A chave da Brevo e o remetente ficam no <code>.env</code> (os mesmos do formulário do site). Aqui você escolhe quem recebe os avisos e o que é enviado.</p>
   <form method="post" class="form">
     <?= csrf_field() ?><input type="hidden" name="act" value="email_save">
@@ -167,14 +171,14 @@ page_start('Configurações', 'configuracoes', $admin);
       <input type="email" name="admin_email" value="<?= h(setting('admin_email', env('MAIL_TO'))) ?>"></label>
     <label class="check"><input type="checkbox" name="notify_customer" value="1" <?= setting('notify_customer', '1') === '1' ? 'checked' : '' ?>> Enviar lembretes e avisos ao cliente (7, 3 dias, vencimento, atraso, suspensão)</label>
     <label class="check"><input type="checkbox" name="notify_admin" value="1" <?= setting('notify_admin', '1') === '1' ? 'checked' : '' ?>> Enviar avisos para mim</label>
-    <div class="actions"><button class="btn btn--roxo">Salvar</button></div>
+    <div class="actions"><button class="btn btn--roxo"><?= ic('tick') ?><span>Salvar</span></button></div>
   </form>
-  <form method="post" style="margin-top:12px"><?= csrf_field() ?><input type="hidden" name="act" value="email_test"><button class="btn btn--sm">Enviar e-mail de teste</button></form>
+  <form method="post" style="margin-top:12px"><?= csrf_field() ?><input type="hidden" name="act" value="email_test"><button class="btn btn--sm"><?= ic('send') ?><span>Enviar e-mail de teste</span></button></form>
 </div>
 
 <!-- Regras -->
 <div class="card" id="regras">
-  <h2>Regras de cobrança</h2>
+  <?= card_head('Regras de cobrança', 'shield') ?>
   <form method="post" class="form">
     <?= csrf_field() ?><input type="hidden" name="act" value="rules_save">
     <div class="row3">
@@ -183,13 +187,13 @@ page_start('Configurações', 'configuracoes', $admin);
       <label>Seu WhatsApp (nos e-mails) <input name="admin_whatsapp" value="<?= h(admin_wa()) ?>"></label>
     </div>
     <p class="small muted" style="margin:0">Hoje: lembrete <?= h(implode(', ', reminder_days())) ?> dia(s) antes (0 = no dia). Passou do vencimento + <?= tolerance_days() ?> dia(s) de tolerância sem pagar, o cliente é suspenso e você recebe o aviso "fulano não pagou". Se ele pagar depois, volta sozinho, sem taxa.</p>
-    <div><button class="btn btn--roxo">Salvar regras</button></div>
+    <div><button class="btn btn--roxo"><?= ic('tick') ?><span>Salvar regras</span></button></div>
   </form>
 </div>
 
 <!-- Planos -->
 <div class="card" id="planos">
-  <h2>Planos</h2>
+  <?= card_head('Planos', 'wallet') ?>
   <form method="post" class="form">
     <?= csrf_field() ?><input type="hidden" name="act" value="plans_save">
     <?php foreach ($plans as $p): ?>
@@ -200,53 +204,54 @@ page_start('Configurações', 'configuracoes', $admin);
       </div>
     <?php endforeach; ?>
     <p class="small muted" style="margin:0">Mudar o valor aqui vale para novos clientes. Quem já assina mantém o preço (dá para ajustar no cadastro de cada cliente). O preço que aparece na página pública é editado no HTML da página.</p>
-    <div><button class="btn btn--roxo">Salvar planos</button></div>
+    <div><button class="btn btn--roxo"><?= ic('tick') ?><span>Salvar planos</span></button></div>
   </form>
 </div>
 
 <!-- Cron -->
 <div class="card" id="cron">
-  <h2>Rotina diária <?= setting('cron_last_run') !== '' ? '<span class="badge badge--ok">última: ' . h(fmt_dt(setting('cron_last_run'))) . '</span>' : '<span class="badge badge--warn">nunca rodou</span>' ?></h2>
+  <?= card_head('Rotina diária', 'clock', setting('cron_last_run') !== '' ? '<span class="badge badge--ok">última: ' . h(fmt_dt(setting('cron_last_run'))) . '</span>' : '<span class="badge badge--warn">nunca rodou</span>') ?>
   <p class="small muted">Todo dia ela confere o Mercado Pago, manda os lembretes, aplica a tolerância e suspende quem não pagou. Agende no cPanel em <b>Tarefas Cron</b>, uma vez por dia (ex.: 9h).</p>
   <p class="lbl">Comando (cPanel > Tarefas Cron)</p>
-  <div class="copy" style="margin-bottom:12px"><input id="cmd" readonly value="<?= h($cronCmd) ?>"><button type="button" class="btn" data-copy="cmd">Copiar</button></div>
+  <div class="copy" style="margin-bottom:12px"><input id="cmd" readonly value="<?= h($cronCmd) ?>"><button type="button" class="btn" data-copy="cmd"><?= ic('copy') ?><span>Copiar</span></button></div>
   <?php if ($cronUrl): ?>
     <p class="lbl">Ou por URL (se o seu cron só aceitar URL)</p>
-    <div class="copy" style="margin-bottom:12px"><input id="cronurl" readonly value="<?= h($cronUrl) ?>"><button type="button" class="btn" data-copy="cronurl">Copiar</button></div>
+    <div class="copy" style="margin-bottom:12px"><input id="cronurl" readonly value="<?= h($cronUrl) ?>"><button type="button" class="btn" data-copy="cronurl"><?= ic('copy') ?><span>Copiar</span></button></div>
   <?php else: ?>
     <p class="small muted">Para usar por URL, defina <code>CRON_KEY</code> no .env.</p>
   <?php endif; ?>
   <?php if (setting('cron_last_log') !== ''): ?><div class="code-block" style="margin-bottom:12px"><?= h(setting('cron_last_log')) ?></div><?php endif; ?>
-  <form method="post"><?= csrf_field() ?><input type="hidden" name="act" value="cron_run"><button class="btn btn--sm">Rodar agora</button></form>
+  <form method="post"><?= csrf_field() ?><input type="hidden" name="act" value="cron_run"><button class="btn btn--sm"><?= ic('play') ?><span>Rodar agora</span></button></form>
 </div>
 
 <!-- Conta -->
-<div class="grid grid--2">
-  <div class="card" id="conta">
-    <h2>Minha senha</h2>
+<div class="grid grid--2" id="conta">
+  <div class="card">
+    <?= card_head('Minha senha', 'lock') ?>
     <form method="post" class="form" autocomplete="off">
       <?= csrf_field() ?><input type="hidden" name="act" value="pass_change">
       <label>Senha atual <input type="password" name="current" required autocomplete="current-password"></label>
       <label>Nova senha (10+ caracteres) <input type="password" name="new" required minlength="10" autocomplete="new-password"></label>
-      <div><button class="btn btn--roxo">Trocar senha</button></div>
+      <div><button class="btn btn--roxo"><?= ic('tick') ?><span>Trocar senha</span></button></div>
     </form>
   </div>
   <div class="card">
-    <h2>Dar acesso a outra pessoa</h2>
+    <?= card_head('Dar acesso a outra pessoa', 'users') ?>
     <form method="post" class="form" autocomplete="off">
       <?= csrf_field() ?><input type="hidden" name="act" value="admin_add">
       <label>Nome <input name="name" required maxlength="80"></label>
       <label>E-mail <input type="email" name="email" required maxlength="160"></label>
       <label>Senha inicial (10+ caracteres) <input type="password" name="password" required minlength="10" autocomplete="new-password"></label>
-      <div><button class="btn btn--roxo">Criar acesso</button></div>
+      <label>Sua senha atual (para confirmar) <input type="password" name="current" required autocomplete="current-password"></label>
+      <div><button class="btn btn--roxo"><?= ic('plus') ?><span>Criar acesso</span></button></div>
     </form>
   </div>
 </div>
 
 <div class="card">
-  <h2>Banco de dados</h2>
+  <?= card_head('Banco de dados', 'database') ?>
   <?php if ($pendingMig): ?>
-    <p class="aviso aviso--warn"><?= $pendingMig ?> atualização(ões) do banco pendente(s). <a href="install.php">Aplicar agora</a>.</p>
+    <p class="aviso aviso--warn"><?= ic('alert') ?><?= $pendingMig ?> atualização(ões) do banco pendente(s). <a href="install.php">Aplicar agora</a>.</p>
   <?php else: ?>
     <p class="small muted" style="margin:0">Banco em dia. Depois de cada deploy que traga atualizações, abra <a href="install.php">install.php</a> para aplicar as novas migrações.</p>
   <?php endif; ?>

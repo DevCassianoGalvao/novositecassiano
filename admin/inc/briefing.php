@@ -153,12 +153,15 @@ function briefing_steps(): array
             ['key' => 'youtube', 'label' => 'YouTube', 'type' => 'text'],
             ['key' => 'gmn', 'label' => 'Perfil no Google Meu Negócio (link)', 'type' => 'text'],
         ]],
-        ['id' => 'revisao', 'title' => 'Revisão e envio', 'fields' => [
-            ['key' => 'ok1', 'label' => 'Entendo que o prazo de 48 horas começa agora e pausa enquanto a copy espera a minha aprovação.', 'type' => 'check', 'req' => true],
-            ['key' => 'ok2', 'label' => 'Vou receber a copy do site para aprovar antes do layout.', 'type' => 'check', 'req' => true, 'when' => [['copia', 'eq', 'criar']]],
-            ['key' => 'ok3', 'label' => 'Vou receber duas direções visuais e escolher uma, sem misturar as duas.', 'type' => 'check', 'req' => true],
-            ['key' => 'ok4', 'label' => 'Tenho direito a uma rodada de ajustes no site, enviada numa lista única.', 'type' => 'check', 'req' => true],
-            ['key' => 'ok5', 'label' => 'O site é desenvolvido em código, sem painel de edição. As alterações são feitas pelo Cassiano.', 'type' => 'check', 'req' => true],
+        ['id' => 'revisao', 'title' => 'Revisão e envio', 'intro' => 'Confira suas respostas. Se precisar, toque em "editar" para voltar a qualquer etapa.', 'fields' => [
+            ['key' => 'termos', 'label' => 'Como funciona daqui pra frente', 'type' => 'terms', 'items' => [
+                ['O prazo de 48 horas começa no envio deste briefing e pausa enquanto a copy espera a sua aprovação.'],
+                ['Eu te envio a copy do site para aprovar antes de começar o layout.', [['copia', 'eq', 'criar']]],
+                ['Você recebe duas direções visuais e escolhe uma, sem misturar as duas.'],
+                ['Você tem direito a uma rodada de ajustes no site, enviada numa lista única.'],
+                ['O site é desenvolvido em código, sem painel de edição. As alterações são feitas por mim.'],
+            ]],
+            ['key' => 'aceite', 'label' => 'Li e concordo com as condições acima.', 'type' => 'check', 'req' => true],
         ]],
     ];
 }
@@ -196,7 +199,7 @@ function briefing_sanitize(array $in, array $c): array
 {
     $out = [];
     foreach (briefing_field_map() as $k => $f) {
-        if ($f['type'] === 'fixed' || $f['type'] === 'files') continue;
+        if (in_array($f['type'], ['fixed', 'files', 'terms'], true)) continue;
         $v = $in[$k] ?? null;
         switch ($f['type']) {
             case 'area':

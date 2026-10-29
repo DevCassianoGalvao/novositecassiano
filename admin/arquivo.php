@@ -13,6 +13,7 @@ $inline = isset($_GET['ver']) && in_array(strtolower(pathinfo($r['orig_name'], P
 header('Content-Type: ' . ($inline ? briefing_mime($r['orig_name']) : 'application/octet-stream'));
 header('Content-Length: ' . filesize($path));
 header('X-Content-Type-Options: nosniff');
-header('Content-Disposition: ' . ($inline ? 'inline' : 'attachment') . '; filename="' . rawurlencode($r['orig_name']) . '"');
+$ascii = preg_replace('/[^A-Za-z0-9._-]+/', '_', $r['orig_name']);
+header('Content-Disposition: ' . ($inline ? 'inline' : 'attachment') . '; filename="' . $ascii . '"; filename*=UTF-8\'\'' . rawurlencode($r['orig_name']));
 header('Cache-Control: private, no-store');
 readfile($path);

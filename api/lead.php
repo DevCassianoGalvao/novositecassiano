@@ -82,7 +82,7 @@ if (!empty($data['website'])) {
 }
 
 /* ---------- limite simples por IP (5 envios a cada 10 min) ---------- */
-$ip = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? 'desconhecido';
+$ip = $_SERVER['REMOTE_ADDR'] ?? 'desconhecido';
 $bucket = sys_get_temp_dir() . '/cg_lead_' . md5($ip);
 $now = time();
 $hits = [];

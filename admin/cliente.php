@@ -116,15 +116,20 @@ $d = ($c && $c['next_due_date']) ? days_between(today(), $c['next_due_date']) : 
 
 page_start($title, 'clientes', $admin);
 ?>
-<div class="head">
-  <div><p class="eyebrow"><a href="clientes.php">← Clientes</a></p><h1><?= h($title) ?> <?= $c ? badge($c['status']) : '' ?></h1></div>
-  <?php if ($c): ?><div class="actions"><a class="btn btn--primary" href="<?= h(wa_link($c['whatsapp'])) ?>" target="_blank" rel="noopener">WhatsApp</a></div><?php endif; ?>
-</div>
+<header class="head">
+  <div><?= back_link('clientes.php', 'Clientes') ?>
+    <div class="who who--xl"><?= $c ? avatar($c['name'], 'av--xl') : '<span class="chip chip--g" style="width:56px;height:56px;border-radius:18px">' . ic('plus') . '</span>' ?><span><h1><?= h($title) ?></h1>
+      <small><?= $c ? badge($c['status']) . ' <span>' . h($c['plan_name']) . ' · ' . h(money((int) $c['price_cents'])) . '/mês' . ($c['business'] ? ' · ' . h($c['business']) : '') . '</span>' : 'Cadastre um cliente que fechou fora da página.' ?></small></span></div>
+  </div>
+  <?php if ($c): ?><div class="actions">
+    <a class="btn" href="mailto:<?= h($c['email']) ?>"><?= ic('mail') ?><span>E-mail</span></a>
+    <a class="btn btn--primary" href="<?= h(wa_link($c['whatsapp'])) ?>" target="_blank" rel="noopener"><?= ic('chat') ?><span>WhatsApp</span></a></div><?php endif; ?>
+</header>
 
 <?php if ($c): ?>
 <div class="grid grid--2">
   <div class="card">
-    <h2>Assinatura</h2>
+    <?= card_head('Assinatura', 'card') ?>
     <dl class="kv">
       <dt>Plano</dt><dd><?= h($c['plan_name']) ?> · <?= h(money((int) $c['price_cents'])) ?>/mês</dd>
       <dt>Próx. vencimento</dt><dd><?= $c['next_due_date'] ? h(fmt_date($c['next_due_date'])) . ($d !== null ? ' <span class="muted">(' . ($d > 0 ? "em $d dia(s)" : ($d === 0 ? 'hoje' : 'atrasado ' . (-$d) . ' dia(s)')) . ')</span>' : '') : '—' ?></dd>
@@ -140,27 +145,27 @@ page_start($title, 'clientes', $admin);
         <p class="aviso aviso--warn">Conecte o Mercado Pago em <a href="configuracoes.php#mp">Configurações</a> para gerar links de pagamento.</p>
       <?php endif; ?>
 
-      <p class="lbl">Link de pagamento do cliente (ele escolhe Pix ou cartão)</p>
-      <div class="copy"><input id="lnk" readonly value="<?= h(pay_url($c)) ?>"><button type="button" class="btn" data-copy="lnk">Copiar</button></div>
+      <p class="lbl" style="margin-bottom:8px">Link pessoal do cliente: ele paga (Pix ou cartão), vê a assinatura e cancela por ali</p>
+      <div class="copy"><input id="lnk" readonly value="<?= h(pay_url($c)) ?>"><button type="button" class="btn" data-copy="lnk"><?= ic('copy') ?><span>Copiar</span></button></div>
       <div class="actions" style="margin-top:12px">
-        <a class="btn btn--primary btn--sm" target="_blank" rel="noopener" href="<?= h(wa_link($c['whatsapp'], $linkMsg)) ?>">Enviar por WhatsApp</a>
-        <a class="btn btn--sm" target="_blank" rel="noopener" href="<?= h(pay_url($c)) ?>">Abrir a página</a>
-        <form method="post" class="inline"><?= csrf_field() ?><input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="act" value="sendlink"><button class="btn btn--sm">Enviar por e-mail</button></form>
+        <a class="btn btn--primary btn--sm" target="_blank" rel="noopener" href="<?= h(wa_link($c['whatsapp'], $linkMsg)) ?>"><?= ic('chat') ?><span>Enviar por WhatsApp</span></a>
+        <a class="btn btn--sm" target="_blank" rel="noopener" href="<?= h(pay_url($c)) ?>"><?= ic('arrow') ?><span>Abrir a página</span></a>
+        <form method="post" class="inline"><?= csrf_field() ?><input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="act" value="sendlink"><button class="btn btn--sm"><?= ic('mail') ?><span>Enviar por e-mail</span></button></form>
       </div>
 
       <div class="actions" style="margin-top:14px">
         <?php if ($c['status'] === 'pendente' || !$c['mp_preapproval_id']): ?>
-          <form method="post" class="inline"><?= csrf_field() ?><input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="act" value="genlink"><button class="btn btn--roxo btn--sm"><?= $c['mp_preapproval_id'] ? 'Gerar novo link do cartão' : 'Gerar só o link do cartão' ?></button></form>
+          <form method="post" class="inline"><?= csrf_field() ?><input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="act" value="genlink"><button class="btn btn--roxo btn--sm"><?= ic('card') ?><?= $c['mp_preapproval_id'] ? 'Gerar novo link do cartão' : 'Gerar só o link do cartão' ?></button></form>
         <?php endif; ?>
         <?php if ($c['mp_preapproval_id']): ?>
-          <form method="post" class="inline"><?= csrf_field() ?><input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="act" value="sync"><button class="btn btn--sm">Sincronizar com o Mercado Pago</button></form>
+          <form method="post" class="inline"><?= csrf_field() ?><input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="act" value="sync"><button class="btn btn--sm"><?= ic('refresh') ?><span>Sincronizar com o Mercado Pago</span></button></form>
         <?php endif; ?>
       </div>
     <?php endif; ?>
   </div>
 
   <div class="card">
-    <h2>Ações</h2>
+    <?= card_head('Ações', 'zap') ?>
     <?php if ($c['status'] !== 'cancelado'): ?>
       <form method="post" class="form" style="margin-bottom:18px">
         <?= csrf_field() ?><input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="act" value="manual_pay">
@@ -169,29 +174,29 @@ page_start($title, 'clientes', $admin);
           <label>Valor <input name="amount" value="<?= h(number_format($c['price_cents'] / 100, 2, ',', '.')) ?>" inputmode="decimal"></label>
           <label>Observação <input name="note" maxlength="190" placeholder="Pix, dinheiro..."></label>
         </div>
-        <div><button class="btn btn--primary btn--sm">Registrar pagamento (+1 mês)</button></div>
+        <div><button class="btn btn--primary btn--sm"><?= ic('wallet') ?><span>Registrar pagamento (+1 mês)</span></button></div>
       </form>
     <?php endif; ?>
 
     <div class="actions">
       <?php if (in_array($c['status'], ['ativo', 'atraso'], true)): ?>
-        <form method="post" class="inline" data-confirm="Suspender este cliente agora? Ele recebe o aviso por e-mail."><?= csrf_field() ?><input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="act" value="suspend"><button class="btn btn--sm btn--danger">Suspender</button></form>
+        <form method="post" class="inline" data-confirm="Suspender este cliente agora? Ele recebe o aviso por e-mail."><?= csrf_field() ?><input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="act" value="suspend"><button class="btn btn--sm btn--danger"><?= ic('power') ?><span>Suspender</span></button></form>
       <?php endif; ?>
       <?php if (in_array($c['status'], ['suspenso', 'cancelado'], true)): ?>
         <form method="post" class="form" style="width:100%"><?= csrf_field() ?><input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="act" value="reactivate">
-          <div class="row2"><label>Novo vencimento <input type="date" name="new_due" value="<?= h(date('Y-m-d', strtotime('+3 day'))) ?>"></label><div style="align-self:end"><button class="btn btn--primary btn--sm">Reativar (sem cobrar taxa)</button></div></div></form>
+          <div class="row2"><label>Novo vencimento <input type="date" name="new_due" value="<?= h(date('Y-m-d', strtotime('+3 day'))) ?>"></label><div style="align-self:end"><button class="btn btn--primary btn--sm"><?= ic('play') ?><span>Reativar (sem cobrar taxa)</span></button></div></div></form>
       <?php endif; ?>
       <?php if ($c['status'] !== 'cancelado'): ?>
-        <form method="post" class="inline" data-confirm="Cancelar a assinatura? Ela também é cancelada no Mercado Pago e o cliente é avisado."><?= csrf_field() ?><input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="act" value="cancel"><button class="btn btn--sm btn--danger">Cancelar assinatura</button></form>
+        <form method="post" class="inline" data-confirm="Cancelar a assinatura? Ela também é cancelada no Mercado Pago e o cliente é avisado."><?= csrf_field() ?><input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="act" value="cancel"><button class="btn btn--sm btn--danger"><?= ic('ban') ?><span>Cancelar assinatura</span></button></form>
       <?php endif; ?>
-      <form method="post" class="inline" data-confirm="Apagar este cliente de vez? Só funciona se ele nunca pagou."><?= csrf_field() ?><input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="act" value="delete"><button class="btn btn--sm btn--danger">Apagar</button></form>
+      <form method="post" class="inline" data-confirm="Apagar este cliente de vez? Só funciona se ele nunca pagou."><?= csrf_field() ?><input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="act" value="delete"><button class="btn btn--sm btn--danger"><?= ic('trash') ?><span>Apagar</span></button></form>
     </div>
   </div>
 </div>
 <?php endif; ?>
 
 <div class="card">
-  <h2><?= $c ? 'Dados do cliente' : 'Novo cliente' ?></h2>
+  <?= card_head($c ? 'Dados do cliente' : 'Dados do novo cliente', 'user') ?>
   <form method="post" class="form">
     <?= csrf_field() ?><input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="act" value="<?= $c ? 'save' : 'create' ?>">
     <div class="row2">
@@ -209,58 +214,56 @@ page_start($title, 'clientes', $admin);
       <label>Endereço do site <input name="site_url" maxlength="255" placeholder="https://" value="<?= $f('site_url') ?>"></label>
     </div>
     <label>Anotações <textarea class="plain" name="notes" maxlength="4000"><?= $f('notes') ?></textarea></label>
-    <div><button class="btn btn--roxo"><?= $c ? 'Salvar dados' : 'Criar cliente' ?></button></div>
+    <div><button class="btn btn--roxo"><?= ic($c ? 'tick' : 'plus') ?><span><?= $c ? 'Salvar dados' : 'Criar cliente' ?></span></button></div>
   </form>
 </div>
 
 <?php if ($c): ?>
-<?php if ($c): ?>
 <div class="card" id="briefing">
-  <h2>Briefing</h2>
+  <?= card_head('Briefing', 'file', '', 'g') ?>
   <?php $brief = null; $bfiles = []; try { $brief = briefing_find((int) $c['id']); $bfiles = briefing_files((int) $c['id']); } catch (Throwable $e) {} ?>
   <?php if (!$brief): ?>
     <p class="muted">Ainda não começou. Link do cliente (abre depois do primeiro pagamento):</p>
     <p><input readonly id="bflink" value="<?= h(briefing_url($c)) ?>" onclick="this.select()"></p>
-    <p><button type="button" class="btn btn--sm" data-copy="bflink">Copiar link</button></p>
+    <p><button type="button" class="btn btn--sm" data-copy="bflink"><?= ic('copy') ?><span>Copiar link</span></button></p>
   <?php else:
       $sent = $brief['status'] === 'enviado';
       $deadline = $sent && $brief['submitted_at'] ? date('Y-m-d H:i:s', strtotime($brief['submitted_at'] . ' +48 hours')) : null; ?>
     <p class="muted"><?= $sent ? 'Briefing enviado em <b>' . h(fmt_dt($brief['submitted_at'])) . '</b>. Prazo de 48h até <b>' . h(fmt_dt($deadline)) . '</b> (pausa enquanto a copy espera a aprovação do cliente).' : 'Em preenchimento, etapa ' . (int) $brief['step'] . ' de 9. Atualizado em ' . h(fmt_dt($brief['updated_at'])) . '.' ?></p>
     <div class="actions" style="margin:10px 0 16px">
-      <button type="button" class="btn btn--primary btn--sm" data-copy="bftxt">Copiar tudo</button>
-      <a class="btn btn--sm" href="briefing-export.php?id=<?= (int) $c['id'] ?>&fmt=txt">Baixar .txt</a>
-      <?php if ($bfiles): ?><a class="btn btn--sm" href="briefing-export.php?id=<?= (int) $c['id'] ?>&fmt=zip">Baixar tudo (.zip com os arquivos)</a><?php endif; ?>
-      <?php if ($sent): ?><a class="btn btn--sm" target="_blank" rel="noopener" href="<?= h(wa_link($c['whatsapp'], 'Recebi tudo! Vou escrever a copy do seu site e te mando aqui pra aprovar.')) ?>">Avisar no WhatsApp</a><?php endif; ?>
+      <button type="button" class="btn btn--primary btn--sm" data-copy="bftxt"><?= ic('copy') ?><span>Copiar tudo</span></button>
+      <a class="btn btn--sm" href="briefing-export.php?id=<?= (int) $c['id'] ?>&fmt=txt"><?= ic('file') ?><span>Baixar .txt</span></a>
+      <?php if ($bfiles): ?><a class="btn btn--sm" href="briefing-export.php?id=<?= (int) $c['id'] ?>&fmt=zip"><?= ic('download') ?><span>Baixar tudo (.zip com os arquivos)</span></a><?php endif; ?>
+      <?php if ($sent): ?><a class="btn btn--sm" target="_blank" rel="noopener" href="<?= h(wa_link($c['whatsapp'], 'Recebi tudo! Vou escrever a copy do seu site e te mando aqui pra aprovar.')) ?>"><?= ic('chat') ?><span>Avisar no WhatsApp</span></a><?php endif; ?>
     </div>
     <textarea id="bftxt" readonly style="position:absolute;left:-9999px"><?= h(briefing_text($c, $brief, $bfiles)) ?></textarea>
     <?php foreach (briefing_sections($c, $brief, $bfiles) as [$title, $rows]): ?>
-      <h3 style="margin:18px 0 6px;font-size:16px"><?= h($title) ?></h3>
+      <h3 class="sec"><?= h($title) ?></h3>
       <dl class="kv">
         <?php foreach ($rows as [$l, $v]): ?><dt><?= h($l) ?></dt><dd style="white-space:pre-wrap"><?= h($v) ?></dd><?php endforeach; ?>
       </dl>
     <?php endforeach; ?>
     <?php if ($bfiles): ?>
-      <h3 style="margin:18px 0 6px;font-size:16px">Arquivos recebidos</h3>
+      <h3 class="sec">Arquivos recebidos</h3>
       <div class="table-wrap"><table class="t stack"><thead><tr><th>Campo</th><th>Arquivo</th><th>Tamanho</th><th></th></tr></thead><tbody>
         <?php foreach ($bfiles as $field => $rows): foreach ($rows as $r): $isImg = in_array(strtolower(pathinfo($r['orig_name'], PATHINFO_EXTENSION)), ['png', 'jpg', 'jpeg', 'webp', 'gif'], true); ?>
-          <tr><td><?= h($field) ?></td>
-            <td><?php if ($isImg): ?><a href="arquivo.php?id=<?= (int) $r['id'] ?>&ver=1" target="_blank"><img src="arquivo.php?id=<?= (int) $r['id'] ?>&ver=1" alt="" style="height:38px;width:38px;object-fit:cover;border-radius:6px;vertical-align:middle;margin-right:8px"></a><?php endif; ?><?= h($r['orig_name']) ?></td>
-            <td><?= h(briefing_size((int) $r['size_bytes'])) ?></td>
-            <td><a class="btn btn--sm" href="arquivo.php?id=<?= (int) $r['id'] ?>">Baixar</a></td></tr>
+          <tr><td data-l="Campo"><?= h(['logo' => 'Logotipo', 'fotos' => 'Fotos', 'manual' => 'Manual de marca', 'outros' => 'Outros', 'copia_arquivo' => 'Copy'][$field] ?? $field) ?></td>
+            <td data-l="Arquivo"><span class="who"><?php if ($isImg): ?><a href="arquivo.php?id=<?= (int) $r['id'] ?>&ver=1" target="_blank"><img class="thumb" src="arquivo.php?id=<?= (int) $r['id'] ?>&ver=1" alt=""></a><?php else: ?><span class="chip"><?= ic('file') ?></span><?php endif; ?><span><b><?= h($r['orig_name']) ?></b></span></span></td>
+            <td data-l="Tamanho" class="num"><?= h(briefing_size((int) $r['size_bytes'])) ?></td>
+            <td class="r" data-l=""><a class="btn btn--sm" href="arquivo.php?id=<?= (int) $r['id'] ?>"><?= ic('download') ?><span>Baixar</span></a></td></tr>
         <?php endforeach; endforeach; ?>
       </tbody></table></div>
     <?php endif; ?>
   <?php endif; ?>
 </div>
-<?php endif; ?>
 
 <div class="card">
-  <h2>Pagamentos</h2>
-  <?php if (!$pays): ?><p class="empty">Nenhum pagamento ainda.</p><?php else: ?>
+  <?= card_head('Pagamentos', 'wallet') ?>
+  <?php if (!$pays): ?><div class="empty"><span class="chip"><?= ic('wallet') ?></span><b>Nenhum pagamento ainda</b><span>Pix, cartão e pagamentos manuais aparecem aqui.</span></div><?php else: ?>
   <div class="table-wrap"><table class="t stack"><thead><tr><th>Data</th><th>Valor</th><th>Situação</th><th>Forma</th><th>Obs.</th></tr></thead><tbody>
   <?php foreach ($pays as $p): ?>
     <tr><td data-l="Data"><?= h(fmt_dt($p['paid_at'] ?: $p['created_at'])) ?></td>
-      <td data-l="Valor"><?= h(money((int) $p['amount_cents'])) ?></td>
+      <td data-l="Valor" class="num"><b><?= h(money((int) $p['amount_cents'])) ?></b></td>
       <td data-l="Situação"><span class="badge badge--<?= $p['status'] === 'pago' ? 'ok' : ($p['status'] === 'falhou' ? 'bad' : 'warn') ?>"><?= h($p['status']) ?></span></td>
       <td data-l="Forma"><?= $p['method'] === 'manual' ? 'Manual' : ($p['method'] === 'pix' ? 'Pix' : 'Cartão') ?></td>
       <td data-l="Obs."><?= h($p['note'] ?? '') ?></td></tr>
@@ -268,9 +271,9 @@ page_start($title, 'clientes', $admin);
 </div>
 
 <div class="card">
-  <h2>Linha do tempo</h2>
-  <?php if (!$acts): ?><p class="empty">Sem eventos ainda.</p><?php else: ?>
-  <ul class="timeline"><?php foreach ($acts as $a): ?><li><time><?= h(fmt_dt($a['created_at'])) ?></time><span><?= h($a['message']) ?></span></li><?php endforeach; ?></ul><?php endif; ?>
+  <?= card_head('Linha do tempo', 'activity') ?>
+  <?php if (!$acts): ?><div class="empty"><span class="chip"><?= ic('activity') ?></span><b>Sem eventos ainda</b></div><?php else: ?>
+  <ul class="timeline timeline--full"><?php foreach ($acts as $a): ?><?= timeline_item($a) ?><?php endforeach; ?></ul><?php endif; ?>
 </div>
 <?php endif; ?>
 <?php page_end();

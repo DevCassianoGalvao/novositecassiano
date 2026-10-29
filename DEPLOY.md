@@ -141,3 +141,11 @@ As migrações `003_briefing.sql` e `004_briefing_etapas.sql` criam as tabelas d
 - **Arquivos** (logo, fotos, copy etc.) ficam numa pasta por pedido, fora do site: por padrão `assinaturas-arquivos/` ao lado da pasta do domínio (na pasta inicial da conta). Para escolher outro lugar, defina `UPLOAD_DIR` no `.env`. Se nenhuma pasta for gravável, usa `admin/storage/` (protegida por `.htaccess`). O limite é 15 MB por arquivo; se o PHP do servidor tiver um limite menor, aumente `upload_max_filesize` e `post_max_size` no cPanel (MultiPHP INI Editor).
 - No painel, a ficha do cliente tem o relatório completo, "Copiar tudo", "Baixar .txt", "Baixar tudo (.zip)" e o download de cada arquivo. Você também recebe o relatório por e-mail, e o cliente recebe uma cópia.
 - O cliente cancela sozinho pela página de pagamento, sem conta.
+
+### 8.10 Segurança (resumo)
+
+- O link pessoal do cliente (`?t=...`) nunca volta para o navegador de quem digita o e-mail de um assinante no formulário: ele vai só para o e-mail do próprio cliente.
+- Nas páginas de pagamento e de briefing, o código do link sai da barra de endereço antes do Pixel/GTM carregar (não vai para a Meta nem para o Google). Recarregar continua funcionando na mesma aba.
+- Painel e páginas do cliente não abrem dentro de outros sites (proteção contra clique enganado), a sessão do painel expira após 8 horas sem uso e o "Sair" exige o botão (não funciona por link).
+- Adicionar outro administrador pede a sua senha atual. Erros do PHP não aparecem para o visitante (ficam no log).
+- Se o site passar a usar a Cloudflare, coloque `TRUST_CLOUDFLARE=1` no `.env`.

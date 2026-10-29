@@ -3,6 +3,7 @@ declare(strict_types=1);
 require __DIR__ . '/inc/bootstrap.php';
 
 header('Cache-Control: no-store');
+security_headers();
 if (!db_ready()) redirect('install.php');
 session_boot();
 if (current_admin()) redirect('index.php');
@@ -21,6 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($a && password_verify($pass, $a['password_hash'])) {
             session_regenerate_id(true);
             $_SESSION['admin_id'] = (int) $a['id'];
+            $_SESSION['seen'] = time();
             unset($_SESSION['csrf']);
             q('UPDATE admins SET last_login_at = NOW() WHERE id = ?', [(int) $a['id']]);
             q('DELETE FROM login_attempts WHERE ip = ? OR email = ?', [$ip, $email]);
@@ -32,25 +34,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $err = 'E-mail ou senha incorretos.';
     }
 }
-?><!doctype html>
-<html lang="pt-BR">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex,nofollow">
-<title>Entrar · Assinaturas</title>
-<link rel="stylesheet" href="assets/admin.css?v=<?= (int) @filemtime(__DIR__ . '/assets/admin.css') ?>">
-</head>
+require __DIR__ . '/inc/layout.php';
+admin_head('Entrar');
+?>
 <body class="auth">
+<?= icon_sprite() ?><?= bg_fx() ?>
 <main class="auth__card">
-  <p class="eyebrow">Painel</p>
-  <h1>Assinaturas</h1>
-  <?php if ($err): ?><p class="aviso aviso--bad"><?= h($err) ?></p><?php endif; ?>
+  <span class="auth__orb" aria-hidden="true"></span>
+  <img class="auth__logo" src="../assets/img/logo.svg" alt="Cassiano Galvão" width="132" height="54">
+  <h1>Entrar no painel</h1>
+  <p class="head__sub">Assinaturas, clientes e briefings do site por assinatura.</p>
+  <?php if ($err): ?><p class="aviso aviso--bad" role="alert"><?= ic('alert') ?><span><?= h($err) ?></span></p><?php endif; ?>
   <form method="post" class="form" autocomplete="on">
     <?= csrf_field() ?>
     <label>E-mail <input type="email" name="email" required autofocus autocomplete="username"></label>
     <label>Senha <input type="password" name="password" required autocomplete="current-password"></label>
-    <button class="btn btn--primary">Entrar</button>
+    <button class="btn btn--primary" style="margin-top:6px"><?= ic('lock') ?><span>Entrar</span></button>
   </form>
 </main>
 </body>

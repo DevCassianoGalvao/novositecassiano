@@ -42,12 +42,16 @@ $msg = 'Oi, ' . first_name($lead['name']) . '! Aqui é o Cassiano, vi seu pedido
 
 page_start('Lead · ' . $lead['name'], 'leads', $admin);
 ?>
-<div class="head"><div><p class="eyebrow"><a href="leads.php">← Leads</a></p><h1><?= h($lead['name']) ?></h1></div>
-  <div class="actions"><a class="btn btn--primary" href="<?= h(wa_link($lead['whatsapp'], $msg)) ?>" target="_blank" rel="noopener">Chamar no WhatsApp</a></div></div>
+<header class="head">
+  <div><?= back_link('leads.php', 'Leads') ?>
+    <div class="who who--xl"><?= avatar($lead['name'], 'av--xl') ?><span><h1><?= h($lead['name']) ?></h1><small><span class="badge <?= $lead['status'] === 'novo' ? 'badge--new' : ($lead['status'] === 'fechado' ? 'badge--ok' : ($lead['status'] === 'perdido' ? 'badge--mute' : 'badge--warn')) ?>"><?= h(LEAD_STATUS[$lead['status']]) ?></span> <span>Plano <?= h(ucfirst($lead['plan_slug'])) ?> · pediu em <?= h(fmt_dt($lead['created_at'])) ?></span></small></span></div>
+  </div>
+  <div class="actions"><a class="btn btn--primary" href="<?= h(wa_link($lead['whatsapp'], $msg)) ?>" target="_blank" rel="noopener"><?= ic('chat') ?><span>Chamar no WhatsApp</span></a></div>
+</header>
 
 <div class="grid grid--2">
   <div class="card">
-    <h2>Dados</h2>
+    <?= card_head('Contato', 'user') ?>
     <dl class="kv">
       <dt>WhatsApp</dt><dd><?= h(phone_pretty($lead['whatsapp'])) ?></dd>
       <dt>E-mail</dt><dd><a href="mailto:<?= h($lead['email']) ?>"><?= h($lead['email']) ?></a></dd>
@@ -58,21 +62,21 @@ page_start('Lead · ' . $lead['name'], 'leads', $admin);
     </dl>
   </div>
   <div class="card">
-    <h2>Acompanhamento</h2>
+    <?= card_head('Acompanhamento', 'note') ?>
     <form method="post" class="form">
       <?= csrf_field() ?><input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="act" value="save">
       <label>Status
         <select name="status"><?php foreach (LEAD_STATUS as $k => $label): ?><option value="<?= $k ?>" <?= $lead['status'] === $k ? 'selected' : '' ?>><?= h($label) ?></option><?php endforeach; ?></select></label>
       <label>Anotações <textarea class="plain" name="notes" maxlength="4000" placeholder="O que combinaram, objeções, próximo passo..."><?= h($lead['notes']) ?></textarea></label>
-      <button class="btn btn--roxo">Salvar</button>
+      <div><button class="btn btn--roxo"><?= ic('tick') ?><span>Salvar</span></button></div>
     </form>
   </div>
 </div>
 
 <div class="card">
-  <h2>Fechou? Vire cliente</h2>
+  <?= card_head('Fechou? Vire cliente', 'users', '', 'g') ?>
   <?php if ($lead['customer_id']): ?>
-    <p>Este lead já virou cliente. <a class="btn btn--sm" href="cliente.php?id=<?= (int) $lead['customer_id'] ?>">Abrir cliente</a></p>
+    <p class="muted" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:0">Este lead já virou cliente. <a class="btn btn--sm" href="cliente.php?id=<?= (int) $lead['customer_id'] ?>"><span>Abrir o cliente</span><?= ic('chevron') ?></a></p>
   <?php else: ?>
     <form method="post" class="form">
       <?= csrf_field() ?><input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="act" value="convert">
@@ -82,13 +86,13 @@ page_start('Lead · ' . $lead['name'], 'leads', $admin);
         <label>Nome do negócio <input name="business" maxlength="120"></label>
         <label>Endereço do site <input name="site_url" maxlength="255" placeholder="https://"></label>
       </div>
-      <div><button class="btn btn--primary">Criar cliente</button></div>
+      <div><button class="btn btn--primary"><?= ic('plus') ?><span>Criar cliente</span></button></div>
     </form>
   <?php endif; ?>
 </div>
 
 <form method="post" data-confirm="Apagar este lead de vez?">
   <?= csrf_field() ?><input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="act" value="delete">
-  <button class="btn btn--danger btn--sm">Apagar lead</button>
+  <button class="btn btn--danger btn--sm"><?= ic('trash') ?><span>Apagar lead</span></button>
 </form>
 <?php page_end();

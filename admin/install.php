@@ -23,6 +23,7 @@ if (PHP_SAPI === 'cli') {
 
 header('Cache-Control: no-store');
 header('X-Robots-Tag: noindex');
+security_headers();
 
 $checks = [];
 $checks[] = ['PHP 8.0 ou mais novo', version_compare(PHP_VERSION, '8.0.0', '>='), PHP_VERSION];
@@ -89,22 +90,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $pending = ($dbOk && $installed) ? migrations_pending() : (($dbOk) ? migration_files() : []);
-?><!doctype html>
-<html lang="pt-BR">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex,nofollow">
-<title>Instalação · Assinaturas</title>
-<link rel="stylesheet" href="assets/admin.css?v=<?= (int) @filemtime(__DIR__ . '/assets/admin.css') ?>">
-</head>
+require_once __DIR__ . '/inc/layout.php';
+admin_head('Instalação');
+?>
 <body class="auth">
+<?= icon_sprite() ?><?= bg_fx() ?>
 <main class="auth__card auth__card--wide">
-  <p class="eyebrow">Sistema de assinaturas</p>
+  <span class="auth__orb" aria-hidden="true"></span>
+  <img class="auth__logo" src="../assets/img/logo.svg" alt="Cassiano Galvão" width="132" height="54">
   <h1>Instalação</h1>
+  <p class="head__sub">Confere o servidor, cria as tabelas e o seu acesso ao painel.</p>
 
-  <?php foreach ($msg as $m): ?><p class="aviso aviso--ok"><?= h($m) ?></p><?php endforeach; ?>
-  <?php if ($err): ?><p class="aviso aviso--bad"><?= h($err) ?></p><?php endif; ?>
+  <?php foreach ($msg as $m): ?><p class="aviso aviso--ok"><?= ic('check') ?><span><?= h($m) ?></span></p><?php endforeach; ?>
+  <?php if ($err): ?><p class="aviso aviso--bad"><?= ic('alert') ?><span><?= h($err) ?></span></p><?php endif; ?>
 
   <h2>1. Checagem do servidor</h2>
   <ul class="checks">
@@ -135,7 +133,7 @@ $pending = ($dbOk && $installed) ? migrations_pending() : (($dbOk) ? migration_f
         <button class="btn btn--primary">Criar / atualizar tabelas</button>
       </form>
     <?php else: ?>
-      <p class="aviso aviso--ok">Tabelas em dia.</p>
+      <p class="aviso aviso--ok"><?= ic('check') ?><span>Tabelas em dia.</span></p>
     <?php endif; ?>
 
     <?php if ($installed && !$hasAdmin): ?>

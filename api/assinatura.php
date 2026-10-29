@@ -52,7 +52,7 @@ if (!is_array($data)) $data = $_POST;
 if (!empty($data['website'])) respond(200, ['ok' => true]); // honeypot
 
 /* limite simples por IP: 5 envios a cada 10 min */
-$ip = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? 'x';
+$ip = client_ip();
 $bucket = sys_get_temp_dir() . '/cg_assin_' . md5($ip);
 $now = time();
 $hits = is_readable($bucket) ? array_filter((array) json_decode((string) file_get_contents($bucket), true), fn($t) => is_int($t) && $t > $now - 600) : [];
@@ -91,20 +91,30 @@ try {
         $planRow = q_one('SELECT * FROM plans WHERE slug = ? AND active = 1', [$plano]);
         if ($planRow) {
             $cust = q_one("SELECT id, status FROM customers WHERE email = ? AND status <> 'cancelado' ORDER BY id DESC LIMIT 1", [$email]);
+            $isSubscriber = false;
             if ($cust && $cust['status'] === 'pendente') {
                 q('UPDATE customers SET name = ?, whatsapp = ?, plan_id = ?, price_cents = ?, updated_at = NOW() WHERE id = ?', [$nome, $whatsapp, (int) $planRow['id'], (int) $planRow['price_cents'], (int) $cust['id']]);
                 $custId = (int) $cust['id'];
             } elseif ($cust) {
-                $custId = (int) $cust['id']; // já é cliente: só leva ao pagamento dele
+                // já é assinante: o link pessoal NUNCA volta para o navegador (qualquer um poderia digitar o e-mail
+                // de outra pessoa). Ele vai só para o e-mail do próprio cliente.
+                $custId = (int) $cust['id'];
+                $isSubscriber = true;
             } else {
                 q('INSERT INTO customers (name, email, whatsapp, plan_id, price_cents, status, billing_mode, lead_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
                     [$nome, $email, $whatsapp, (int) $planRow['id'], (int) $planRow['price_cents'], 'pendente', 'mercadopago', $leadId]);
                 $custId = (int) db()->lastInsertId();
                 log_activity('cliente', 'Cliente criado automaticamente pelo formulário da página', $custId, $leadId);
             }
-            q("UPDATE leads SET customer_id = ?, status = 'negociando', updated_at = NOW() WHERE id = ?", [$custId, $leadId]);
+            if ($isSubscriber) {
+                // não liga o lead ao assinante: pode ser outra pessoa usando o e-mail dele
+                q('UPDATE leads SET notes = ?, updated_at = NOW() WHERE id = ?', ['O e-mail já é de um assinante (cliente #' . $custId . '). O link da assinatura foi enviado só para o e-mail dele.', $leadId]);
+            } else {
+                q("UPDATE leads SET customer_id = ?, status = 'negociando', updated_at = NOW() WHERE id = ?", [$custId, $leadId]);
+            }
             $custRow = customer_find($custId);
-            if ($custRow) $GLOBALS['pay_url'] = pay_url($custRow);
+            if ($custRow && !$isSubscriber) $GLOBALS['pay_url'] = pay_url($custRow);
+            if ($custRow && $isSubscriber) notify_customer($custRow, 'acesso', today());
         }
     }
 } catch (Throwable $e) {

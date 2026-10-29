@@ -147,6 +147,10 @@ function email_content(string $kind, array $c, array $v = []): array
         case 'reativado':
             return ['Seu site está de volta',
                 $p("Oi, $first! O pagamento entrou e seu site já está de volta ao ar.") . $p("Seu próximo vencimento é em <b>$due</b>. Obrigado!"), null];
+        case 'acesso':
+            return ['O link da sua assinatura',
+                $p("Oi, $first!") . $p("Recebi um novo pedido com o seu e-mail, mas você já é assinante do <b>$plan</b>. Não precisa assinar de novo.") . $p('Pelo link abaixo você vê sua assinatura, paga a mensalidade, acessa o briefing ou cancela quando quiser. Se não foi você que fez esse pedido, pode ignorar este e-mail.'),
+                ['label' => 'Abrir minha assinatura', 'url' => $pay]];
         case 'briefing':
             $emp = h($v['empresa'] ?? '') ?: 'sua empresa';
             $next = ($v['copia'] ?? 'criar') === 'propria' ? "parto direto para o layout do site da <b>$emp</b> e te chamo no WhatsApp com as duas direções visuais" : "vou desenvolver a copy do site da <b>$emp</b> e te chamo no WhatsApp para aprovarmos juntos";
@@ -297,6 +301,15 @@ function apply_payment(array $c, int $amountCents, string $method, ?string $mpRe
     log_activity('pagamento', 'Pagamento recebido: ' . money($amountCents) . ' (' . ($method === 'manual' ? 'manual' : ($method === 'pix' ? 'Pix' : 'cartão')) . ')', (int) $c['id']);
 
     if ($prev !== 'ativo') log_activity('status', 'Status: Ativo · pagamento recebido', (int) $c['id']);
+
+    // pagou: o lead que originou o cliente vira "fechado" sozinho
+    try {
+        $closed = q("UPDATE leads SET status = 'fechado', customer_id = ?, updated_at = NOW() WHERE (id = ? OR customer_id = ?) AND status <> 'fechado'",
+            [(int) $c['id'], (int) ($c['lead_id'] ?? 0), (int) $c['id']])->rowCount();
+        if ($closed > 0) log_activity('lead', 'Lead marcado como Fechado (pagamento confirmado)', (int) $c['id'], $c['lead_id'] ? (int) $c['lead_id'] : null);
+    } catch (Throwable $e) {
+        error_log('[assinaturas] fechar lead: ' . $e->getMessage());
+    }
 
     if ($syncAfter && $method === 'mercadopago' && $c['mp_preapproval_id']) {
         try {
