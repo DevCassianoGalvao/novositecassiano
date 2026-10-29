@@ -502,3 +502,14 @@ body.sa{font-size:18px}
   .sa-ring{width:130px;height:130px}
   .sa-checks{max-width:none;width:auto}
 }
+
+/* celular: cards abaixo do queixo, um pra cada lado, saindo um pouco da foto */
+@media (max-width:720px){
+  .sa-photo{margin-bottom:40px}
+  .sa-pain--b{right:-30px;bottom:3%;top:auto;max-width:170px}
+  .sa-pain--c{left:-30px;bottom:-12%;top:auto}
+  .sa-serp{min-width:0;width:auto}
+  .sa-serp small,.sa-serp b{white-space:nowrap}
+  .sa-serp small{font-size:10.5px}
+  .sa-pain--c{bottom:-10%}
+}
