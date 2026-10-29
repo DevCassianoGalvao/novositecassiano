@@ -32,7 +32,7 @@ page_start('Rastreamento', 'rastreamento', $admin);
 <div class="head"><div><p class="eyebrow">Só para a página /site-por-assinatura</p><h1>Rastreamento</h1></div></div>
 
 <?php if (!$cfg['configured']): ?>
-  <p class="alert alert--warn">Você ainda não salvou nada aqui. Enquanto isso, a página continua usando o Pixel padrão da Meta (987681871022914), que aparece abaixo. Ao salvar, o que estiver nas caixas passa a valer.</p>
+  <p class="aviso aviso--warn">Você ainda não salvou nada aqui. Enquanto isso, a página continua usando o Pixel padrão da Meta (987681871022914), que aparece abaixo. Ao salvar, o que estiver nas caixas passa a valer.</p>
 <?php endif; ?>
 
 <form method="post" class="card form">

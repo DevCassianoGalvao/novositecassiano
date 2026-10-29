@@ -104,10 +104,10 @@ input[readonly]{opacity:.8}
 .tabs .n{opacity:.7;margin-left:6px;font-weight:500}
 
 /* alertas */
-.alert{padding:12px 16px;border-radius:12px;margin:0 0 16px;font-size:15px;border:1px solid}
-.alert--ok{background:rgba(0,239,158,.08);border-color:rgba(0,239,158,.3);color:#b9ffe3}
-.alert--bad{background:rgba(255,92,122,.08);border-color:rgba(255,92,122,.35);color:#ffc2cd}
-.alert--warn{background:rgba(255,194,75,.08);border-color:rgba(255,194,75,.35);color:#ffe3a6}
+.aviso{padding:12px 16px;border-radius:12px;margin:0 0 16px;font-size:15px;border:1px solid}
+.aviso--ok{background:rgba(0,239,158,.08);border-color:rgba(0,239,158,.3);color:#b9ffe3}
+.aviso--bad{background:rgba(255,92,122,.08);border-color:rgba(255,92,122,.35);color:#ffc2cd}
+.aviso--warn{background:rgba(255,194,75,.08);border-color:rgba(255,194,75,.35);color:#ffe3a6}
 
 /* dados do cliente */
 .kv{display:grid;grid-template-columns:150px 1fr;gap:8px 16px;font-size:15px}

@@ -137,7 +137,7 @@ page_start($title, 'clientes', $admin);
     <?php if ($c['status'] !== 'cancelado'): ?>
       <hr>
       <?php if (!mp_connected()): ?>
-        <p class="alert alert--warn">Conecte o Mercado Pago em <a href="configuracoes.php#mp">Configurações</a> para gerar links de pagamento.</p>
+        <p class="aviso aviso--warn">Conecte o Mercado Pago em <a href="configuracoes.php#mp">Configurações</a> para gerar links de pagamento.</p>
       <?php endif; ?>
 
       <p class="lbl">Link de pagamento do cliente (ele escolhe Pix ou cartão)</p>

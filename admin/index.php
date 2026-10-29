@@ -32,7 +32,7 @@ page_start('Painel', 'index', $admin);
   <div class="actions"><a class="btn btn--primary" href="cliente.php?id=0">Novo cliente</a></div></div>
 
 <?php if ($todo): ?>
-<div class="alert alert--warn"><b>Falta configurar:</b>
+<div class="aviso aviso--warn"><b>Falta configurar:</b>
   <?php foreach ($todo as $i => [$t, $href]): ?><?= $i ? ' · ' : ' ' ?><a href="<?= h($href) ?>"><?= h($t) ?></a><?php endforeach; ?></div>
 <?php endif; ?>
 

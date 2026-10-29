@@ -108,7 +108,7 @@ $limit = $c && $c['next_due_date'] ? fmt_date(date('Y-m-d', strtotime($c['next_d
   .copy input{flex:1;min-width:0;font:15px ui-monospace,Menlo,monospace;color:var(--txt);background:#0E0B17;border:1px solid var(--line);border-radius:12px;padding:12px}
   .btn{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:12px 24px;border-radius:99px;background:var(--verde);color:#03140D;font:700 18px 'Space Grotesk',sans-serif;border:0;cursor:pointer;text-decoration:none}
   .btn--ghost{background:transparent;color:var(--txt);border:1px solid var(--line)}
-  .alert{padding:14px 16px;border-radius:14px;margin-bottom:16px;font-size:17px;border:1px solid rgba(255,92,122,.4);background:rgba(255,92,122,.1);color:#ffc2cd}
+  .aviso{padding:14px 16px;border-radius:14px;margin-bottom:16px;font-size:17px;border:1px solid rgba(255,92,122,.4);background:rgba(255,92,122,.1);color:#ffc2cd}
   .ok{text-align:center;padding:26px 10px}
   .ok .tick{width:78px;height:78px;border-radius:50%;margin:0 auto 18px;display:grid;place-items:center;background:rgba(0,239,158,.12);box-shadow:0 0 0 1px rgba(0,239,158,.4),0 0 60px rgba(0,239,158,.25)}
   .ok svg{width:38px;height:38px;stroke:var(--verde);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
@@ -143,7 +143,7 @@ $limit = $c && $c['next_due_date'] ? fmt_date(date('Y-m-d', strtotime($c['next_d
       <?php else: ?><br>Esta assinatura foi cancelada. Fale comigo se quiser voltar.<?php endif; ?></p>
   </div>
 
-  <?php if ($err): ?><p class="alert"><?= h($err) ?></p><?php endif; ?>
+  <?php if ($err): ?><p class="aviso"><?= h($err) ?></p><?php endif; ?>
 
   <?php if ($st === 'cancelado'): ?>
     <a class="btn" href="<?= h($wa) ?>">Falar com o Cassiano</a>

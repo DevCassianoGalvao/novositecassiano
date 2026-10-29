@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <main class="auth__card">
   <p class="eyebrow">Painel</p>
   <h1>Assinaturas</h1>
-  <?php if ($err): ?><p class="alert alert--bad"><?= h($err) ?></p><?php endif; ?>
+  <?php if ($err): ?><p class="aviso aviso--bad"><?= h($err) ?></p><?php endif; ?>
   <form method="post" class="form" autocomplete="on">
     <?= csrf_field() ?>
     <label>E-mail <input type="email" name="email" required autofocus autocomplete="username"></label>

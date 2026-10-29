@@ -47,7 +47,7 @@ function page_start(string $title, string $active, array $admin): void
   </nav>
   <main class="main">
     <?php foreach (flash() ?? [] as $f): ?>
-      <p class="alert alert--<?= $f['t'] === 'bad' ? 'bad' : ($f['t'] === 'warn' ? 'warn' : 'ok') ?>"><?= h($f['m']) ?></p>
+      <p class="aviso aviso--<?= $f['t'] === 'bad' ? 'bad' : ($f['t'] === 'warn' ? 'warn' : 'ok') ?>"><?= h($f['m']) ?></p>
     <?php endforeach; ?>
 <?php
 }

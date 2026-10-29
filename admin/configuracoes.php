@@ -118,8 +118,8 @@ page_start('Configurações', 'configuracoes', $admin);
 <div class="card" id="mp">
   <h2>Mercado Pago <?= $token !== '' ? '<span class="badge badge--ok">conectado</span>' : '<span class="badge badge--warn">não conectado</span>' ?>
     <?= ($token !== '' && mp_is_test_token($token)) ? '<span class="badge badge--warn">modo teste</span>' : '' ?></h2>
-  <?php if ($tokenErr): ?><p class="alert alert--bad"><?= h($tokenErr) ?> Defina <code>APP_KEY</code> no .env.</p><?php endif; ?>
-  <?php if ($who): ?><p class="alert alert--<?= $who['error'] === '' ? 'ok' : 'bad' ?>"><?= $who['error'] === '' ? 'Conta: ' . h(($who['body']['nickname'] ?? '') . ' ' . ($who['body']['email'] ?? '')) : h($who['error']) ?></p><?php endif; ?>
+  <?php if ($tokenErr): ?><p class="aviso aviso--bad"><?= h($tokenErr) ?> Defina <code>APP_KEY</code> no .env.</p><?php endif; ?>
+  <?php if ($who): ?><p class="aviso aviso--<?= $who['error'] === '' ? 'ok' : 'bad' ?>"><?= $who['error'] === '' ? 'Conta: ' . h(($who['body']['nickname'] ?? '') . ' ' . ($who['body']['email'] ?? '')) : h($who['error']) ?></p><?php endif; ?>
 
   <details class="card" style="background:var(--card-2)">
     <summary>Passo a passo para conectar (leva 5 minutos)</summary>
@@ -246,7 +246,7 @@ page_start('Configurações', 'configuracoes', $admin);
 <div class="card">
   <h2>Banco de dados</h2>
   <?php if ($pendingMig): ?>
-    <p class="alert alert--warn"><?= $pendingMig ?> atualização(ões) do banco pendente(s). <a href="install.php">Aplicar agora</a>.</p>
+    <p class="aviso aviso--warn"><?= $pendingMig ?> atualização(ões) do banco pendente(s). <a href="install.php">Aplicar agora</a>.</p>
   <?php else: ?>
     <p class="small muted" style="margin:0">Banco em dia. Depois de cada deploy que traga atualizações, abra <a href="install.php">install.php</a> para aplicar as novas migrações.</p>
   <?php endif; ?>

@@ -103,8 +103,8 @@ $pending = ($dbOk && $installed) ? migrations_pending() : (($dbOk) ? migration_f
   <p class="eyebrow">Sistema de assinaturas</p>
   <h1>Instalação</h1>
 
-  <?php foreach ($msg as $m): ?><p class="alert alert--ok"><?= h($m) ?></p><?php endforeach; ?>
-  <?php if ($err): ?><p class="alert alert--bad"><?= h($err) ?></p><?php endif; ?>
+  <?php foreach ($msg as $m): ?><p class="aviso aviso--ok"><?= h($m) ?></p><?php endforeach; ?>
+  <?php if ($err): ?><p class="aviso aviso--bad"><?= h($err) ?></p><?php endif; ?>
 
   <h2>1. Checagem do servidor</h2>
   <ul class="checks">
@@ -135,7 +135,7 @@ $pending = ($dbOk && $installed) ? migrations_pending() : (($dbOk) ? migration_f
         <button class="btn btn--primary">Criar / atualizar tabelas</button>
       </form>
     <?php else: ?>
-      <p class="alert alert--ok">Tabelas em dia.</p>
+      <p class="aviso aviso--ok">Tabelas em dia.</p>
     <?php endif; ?>
 
     <?php if ($installed && !$hasAdmin): ?>
