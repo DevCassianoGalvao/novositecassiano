@@ -400,6 +400,7 @@ if ($open && !$fatal) {
     w.appendChild($('h2',{},['O que acontece agora']));
     w.appendChild($('ol',{},(own?['Você já enviou a copy, então vou direto ao layout.','Eu te envio duas direções visuais e você escolhe uma.','Eu desenvolvo o site completo, você me manda sua lista de ajustes e o site vai pro ar.']:['Eu escrevo a copy do seu site e te envio pelo WhatsApp.','Você aprova a copy.','Eu te envio duas direções visuais e você escolhe uma.','Eu desenvolvo o site completo, você me manda sua lista de ajustes e o site vai pro ar.']).map(function(x){return $('li',{},[x])})));
     w.appendChild($('p',{},['Esqueceu de mandar alguma coisa? Me chama no WhatsApp.']));
+    w.appendChild($('p',{class:'foot',style:'margin:0 0 18px;text-align:left'},[$('a',{href:B.pay,style:'color:var(--roxo-claro)'},['Gerenciar ou cancelar minha assinatura'])]));
     w.appendChild($('div',{class:'ac'},[$('a',{class:'btn',href:B.wa},['Falar no WhatsApp']),$('button',{type:'button',class:'btn btn--ghost',onclick:function(){done=false;cur=steps.length-1;render();window.scrollTo(0,0)}},['Revisar minhas respostas'])]));
     return w;
   }

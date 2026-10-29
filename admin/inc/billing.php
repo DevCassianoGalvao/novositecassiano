@@ -174,6 +174,9 @@ function notify_customer(array $c, string $kind, string $refDate, array $v = [])
     if ($ins->rowCount() === 0) return false;
     $id = (int) db()->lastInsertId();
     [$subject, $body, $cta] = email_content($kind, $c, $v);
+    if ($kind !== 'cancelado') {
+        $body .= '<p style="margin:22px 0 0;font-size:14px;color:#6b6780">Para ver sua assinatura, trocar a forma de pagamento ou cancelar quando quiser: <a href="' . h(pay_url($c)) . '">gerenciar minha assinatura</a>.</p>';
+    }
     $html = email_layout($subject, $body, $cta);
     [$ok, $err] = brevo_send($c['email'], $c['name'], $subject, $html, email_to_text($html), ['assinatura', $kind]);
     if ($ok) {
