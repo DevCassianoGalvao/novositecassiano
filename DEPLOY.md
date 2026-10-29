@@ -105,7 +105,7 @@ Sem painel? Também dá por terminal: `php admin/install.php migrate`.
 **Atualizações futuras do banco:** quando uma versão nova trouxer migrações (`admin/sql/00X_*.sql`), faça o deploy e abra `/admin/install.php` logado (ou use o link em Configurações > Banco de dados).
 
 ### 8.4 Conectar o Mercado Pago
-No painel, *Configurações > Mercado Pago* tem o passo a passo: criar a aplicação no Mercado Pago Developers, colar o **Access Token de produção** e a **assinatura secreta** do webhook, e cadastrar a URL `https://cassianogalvao.com.br/api/mp-webhook.php` com os eventos de *Planos e assinaturas*. Clique em *Salvar e testar*.
+No painel, *Configurações > Mercado Pago* tem o passo a passo: criar a aplicação no Mercado Pago Developers, colar o **Access Token de produção** e a **assinatura secreta** do webhook, e cadastrar a URL `https://cassianogalvao.com.br/api/mp-webhook.php` com os eventos **Planos e assinaturas** (cartão) e **Pagamentos** (Pix). Faça isso na aba *Modo de produção* (e, se quiser testar, também na de teste). Clique em *Salvar e testar*.
 
 ### 8.5 Agendar a rotina diária (lembretes e suspensão)
 cPanel > *Tarefas Cron* > 1x por dia (ex.: 9h), comando (copie o exato em Configurações > Rotina diária):
@@ -122,3 +122,13 @@ Ela confere o Mercado Pago, manda lembretes (7 dias, 3 dias e no dia), dá 1 dia
 - `/admin` pede login; `/admin/inc/` e `/admin/sql/` dão **403**.
 - Preencha o formulário da página: o lead aparece em *Leads* e o e-mail chega.
 - Em *Configurações > E-mails* use "Enviar e-mail de teste".
+
+### 8.8 Pix e cartão (página de pagamento do cliente)
+Cada cliente tem um link único de pagamento (aparece no cadastro dele, com botões de WhatsApp e e-mail): `https://cassianogalvao.com.br/site-por-assinatura/pagar/?t=...`.
+Nessa página ele escolhe:
+- **Pix:** o QR Code é gerado na hora (Pix Copia e Cola também). Quando o pagamento cai, a tela confirma sozinha e o sistema libera o cliente e atualiza o vencimento.
+- **Cartão:** abre o pagamento do Mercado Pago e fica com cobrança automática todo mês.
+
+Os lembretes por e-mail (7 dias, 3 dias, no dia, atraso e suspensão) levam o botão "Pagar agora" para essa página. Quem paga por Pix recebe o lembrete todo mês e paga de novo pelo mesmo link; quem pagou no Pix pode trocar para o cartão a qualquer momento.
+
+Se você já tinha instalado o painel antes desta versão, abra `/admin/install.php` logado (ou o link em Configurações > Banco de dados) para aplicar a migração `002_portal_pix.sql`.

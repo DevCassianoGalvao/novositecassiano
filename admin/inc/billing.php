@@ -16,7 +16,30 @@ require_once __DIR__ . '/mp.php';
 
 function customer_find(int $id): ?array
 {
-    return q_one('SELECT c.*, p.name AS plan_name, p.slug AS plan_slug FROM customers c JOIN plans p ON p.id = c.plan_id WHERE c.id = ?', [$id]);
+    $c = q_one('SELECT c.*, p.name AS plan_name, p.slug AS plan_slug FROM customers c JOIN plans p ON p.id = c.plan_id WHERE c.id = ?', [$id]);
+    if ($c && empty($c['portal_token'])) {
+        $c['portal_token'] = bin2hex(random_bytes(16));
+        q('UPDATE customers SET portal_token = ? WHERE id = ?', [$c['portal_token'], $id]);
+    }
+    return $c;
+}
+
+function customer_by_token(string $t): ?array
+{
+    if (!preg_match('/^[a-f0-9]{32,40}$/', $t)) return null;
+    $r = q_one('SELECT id FROM customers WHERE portal_token = ?', [$t]);
+    return $r ? customer_find((int) $r['id']) : null;
+}
+
+function pay_url(array $c): string
+{
+    return app_url() . '/site-por-assinatura/pagar/?t=' . $c['portal_token'];
+}
+
+/** Tem cartão cadastrado com cobrança automática ativa? */
+function has_card_auto(array $c): bool
+{
+    return !empty($c['mp_preapproval_id']) && ($c['mp_status'] ?? '') === 'authorized';
 }
 
 function customer_by_preapproval(string $pid, string $extRef = ''): ?array
@@ -86,11 +109,13 @@ function email_content(string $kind, array $c, array $v = []): array
     $ctaWa = ['label' => 'Falar com o Cassiano no WhatsApp', 'url' => $wa];
     $p = fn(string $s) => '<p style="margin:0 0 14px">' . $s . '</p>';
 
+    $pay = pay_url($c);
+    $auto = has_card_auto($c);
     switch ($kind) {
         case 'link':
             return ['Sua assinatura do site está pronta para ativar',
-                $p("Oi, $first!") . $p("Falta só um passo: ativar a assinatura do <b>$plan</b> ($price por mês) pelo Mercado Pago. Leva 1 minuto e o pagamento é feito direto no cartão, com a segurança do Mercado Pago.") . $p('Se tiver qualquer dúvida, é só me chamar no WhatsApp.'),
-                ['label' => 'Ativar minha assinatura', 'url' => (string) ($c['mp_init_point'] ?? $wa)]];
+                $p("Oi, $first!") . $p("Falta só um passo: escolher como pagar a assinatura do <b>$plan</b> ($price por mês).") . $p('Você pode pagar com <b>Pix</b> (QR Code, confirmação na hora) ou com <b>cartão de crédito</b> (cobrança automática todo mês).') . $p('Se tiver qualquer dúvida, é só me chamar no WhatsApp.'),
+                ['label' => 'Escolher como pagar', 'url' => $pay]];
         case 'welcome':
             return ['Assinatura confirmada!',
                 $p("Oi, $first! Recebi seu pagamento de <b>$price</b>.") . $p('Seu site já entrou na minha fila. Vou te chamar no WhatsApp para alinharmos o briefing e começar.') . $p("A próxima cobrança será em <b>$due</b>."),
@@ -101,18 +126,24 @@ function email_content(string $kind, array $c, array $v = []): array
         case 'lembrete':
             $n = (int) ($v['dias'] ?? 0);
             $quando = $n === 0 ? 'vence hoje' : ($n === 1 ? 'vence amanhã' : "vence em $n dias");
+            if ($auto) {
+                return ["Sua mensalidade $quando",
+                    $p("Oi, $first!") . $p("A cobrança de <b>$price</b> do seu <b>$plan</b> $quando (<b>$due</b>). Ela acontece automaticamente no cartão cadastrado no Mercado Pago.") . $p('Confira se o cartão está com limite e dentro da validade. Para trocar o cartão ou tirar dúvidas, é só falar comigo.'),
+                    $ctaWa];
+            }
             return ["Sua mensalidade $quando",
-                $p("Oi, $first!") . $p("A cobrança de <b>$price</b> do seu <b>$plan</b> $quando (<b>$due</b>). Ela acontece automaticamente no cartão cadastrado no Mercado Pago.") . $p('Confira se o cartão está com limite e dentro da validade. Para trocar o cartão ou tirar dúvidas, é só falar comigo.'),
-                $ctaWa];
+                $p("Oi, $first!") . $p("A mensalidade de <b>$price</b> do seu <b>$plan</b> $quando (<b>$due</b>).") . $p('Para manter o site no ar, é só pagar pelo link: <b>Pix</b> com QR Code (cai na hora) ou <b>cartão</b>, se preferir deixar a cobrança automática.'),
+                ['label' => 'Pagar agora', 'url' => $pay]];
         case 'atraso':
             $lim = h(fmt_date(date('Y-m-d', strtotime(($c['next_due_date'] ?? today()) . ' +' . tolerance_days() . ' day'))));
-            return ['Não consegui cobrar sua mensalidade',
-                $p("Oi, $first!") . $p("Não consegui processar a cobrança de <b>$price</b> que venceu em <b>$due</b>.") . $p("Você tem uma tolerância até <b>$lim</b>. Se o pagamento não entrar até lá, o site sai do ar temporariamente. Assim que o pagamento cair, ele volta na hora, sem taxa nenhuma."),
-                ['label' => 'Resolver agora no WhatsApp', 'url' => $wa]];
+            $txt = $auto ? "Não consegui processar a cobrança de <b>$price</b> que venceu em <b>$due</b>." : "Ainda não vi o pagamento de <b>$price</b> que venceu em <b>$due</b>.";
+            return ['Sua mensalidade está em aberto',
+                $p("Oi, $first!") . $p($txt) . $p("Você tem uma tolerância até <b>$lim</b>. Se o pagamento não entrar até lá, o site sai do ar temporariamente. Assim que o pagamento cair, ele volta na hora, sem taxa nenhuma."),
+                ['label' => 'Pagar agora (Pix ou cartão)', 'url' => $pay]];
         case 'suspenso':
             return ['Seu site saiu do ar',
-                $p("Oi, $first!") . $p("Como o pagamento de <b>$price</b> (vencimento em <b>$due</b>) não entrou, tirei seu site do ar.") . $p('Não cobro nada para reativar: pagou, o site volta. É só me chamar no WhatsApp ou regularizar pelo Mercado Pago.'),
-                ['label' => 'Reativar meu site', 'url' => $wa]];
+                $p("Oi, $first!") . $p("Como o pagamento de <b>$price</b> (vencimento em <b>$due</b>) não entrou, tirei seu site do ar.") . $p('Não cobro nada para reativar: pagou (Pix ou cartão), o site volta.'),
+                ['label' => 'Pagar e reativar meu site', 'url' => $pay]];
         case 'reativado':
             return ['Seu site está de volta',
                 $p("Oi, $first! O pagamento entrou e seu site já está de volta ao ar.") . $p("Seu próximo vencimento é em <b>$due</b>. Obrigado!"), null];
@@ -252,8 +283,9 @@ function apply_payment(array $c, int $amountCents, string $method, ?string $mpRe
     $base = ($due && $due >= today()) ? $due : today();
     $fields = ['next_due_date' => add_months($base, 1), 'status' => 'ativo', 'suspended_at' => null];
     if (empty($c['started_at'])) $fields['started_at'] = 'NOW()';
+    if ($method === 'pix' && !has_card_auto($c)) $fields['billing_mode'] = 'manual';
     customer_update((int) $c['id'], $fields);
-    log_activity('pagamento', 'Pagamento recebido: ' . money($amountCents) . ' (' . ($method === 'manual' ? 'manual' : 'Mercado Pago') . ')', (int) $c['id']);
+    log_activity('pagamento', 'Pagamento recebido: ' . money($amountCents) . ' (' . ($method === 'manual' ? 'manual' : ($method === 'pix' ? 'Pix' : 'cartão')) . ')', (int) $c['id']);
 
     if ($prev !== 'ativo') log_activity('status', 'Status: Ativo · pagamento recebido', (int) $c['id']);
 
@@ -357,7 +389,8 @@ function mp_handle_authorized_payment(string $apId): string
 function mp_generate_link(array $c): array
 {
     $c = customer_find((int) $c['id']);
-    $r = mp_create_preapproval($c, (string) $c['plan_name']);
+    $start = (in_array($c['status'], ['ativo', 'atraso'], true) && $c['next_due_date'] && $c['next_due_date'] > today()) ? $c['next_due_date'] : null;
+    $r = mp_create_preapproval($c, (string) $c['plan_name'], $start);
     if ($r['error'] !== '' || empty($r['body']['id'])) return [false, $r['error'] !== '' ? $r['error'] : 'Resposta inesperada do Mercado Pago.'];
     $b = $r['body'];
     customer_update((int) $c['id'], [
@@ -425,4 +458,52 @@ function run_daily(): array
     q('DELETE FROM webhook_log WHERE created_at < (NOW() - INTERVAL 60 DAY)');
     $log[] = 'Limpeza concluída.';
     return $log;
+}
+
+
+/* ---------- Pix (QR Code) ---------- */
+
+/** Devolve a cobrança Pix pendente do cliente ou cria uma nova. @return array{0:bool,1:array|string} */
+function pix_for_customer(array $c): array
+{
+    $ex = q_one("SELECT * FROM pix_charges WHERE customer_id = ? AND status = 'pendente' AND expires_at > (NOW() + INTERVAL 10 MINUTE) ORDER BY id DESC LIMIT 1", [(int) $c['id']]);
+    if ($ex) return [true, $ex];
+    $r = mp_create_pix($c, (int) $c['price_cents'], 'Site por assinatura · ' . $c['plan_name']);
+    $b = $r['body'];
+    $td = $b['point_of_interaction']['transaction_data'] ?? [];
+    if ($r['error'] !== '' || empty($b['id']) || empty($td['qr_code'])) return [false, $r['error'] !== '' ? $r['error'] : 'O Mercado Pago não devolveu o QR Code.'];
+    $exp = !empty($b['date_of_expiration']) ? date('Y-m-d H:i:s', (int) strtotime((string) $b['date_of_expiration'])) : date('Y-m-d H:i:s', strtotime('+1 day'));
+    q('INSERT INTO pix_charges (customer_id, mp_payment_id, amount_cents, qr_code, qr_base64, status, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())',
+        [(int) $c['id'], (string) $b['id'], (int) $c['price_cents'], (string) $td['qr_code'], (string) ($td['qr_code_base64'] ?? ''), 'pendente', $exp]);
+    $newId = (int) db()->lastInsertId();
+    log_activity('pix', 'QR Code Pix gerado (' . money((int) $c['price_cents']) . ')', (int) $c['id']);
+    return [true, q_one('SELECT * FROM pix_charges WHERE id = ?', [$newId])];
+}
+
+/** Confere um pagamento Pix no Mercado Pago e libera o cliente se estiver aprovado. */
+function pix_settle(string $mpPaymentId): string
+{
+    $r = mp_get_payment($mpPaymentId);
+    if ($r['error'] !== '') return 'erro: ' . $r['error'];
+    $b = $r['body'];
+    if (($b['payment_method_id'] ?? '') !== 'pix') return 'ignorado (não é Pix)';
+    $status = (string) ($b['status'] ?? '');
+    $row = q_one('SELECT * FROM pix_charges WHERE mp_payment_id = ?', [$mpPaymentId]);
+    $c = null;
+    if ($row) $c = customer_find((int) $row['customer_id']);
+    if (!$c && preg_match('/^c(\d+)$/', (string) ($b['external_reference'] ?? ''), $m)) $c = customer_find((int) $m[1]);
+    if (!$c) return 'cliente não encontrado';
+
+    if ($status === 'approved') {
+        $paidAt = !empty($b['date_approved']) ? date('Y-m-d H:i:s', (int) strtotime((string) $b['date_approved'])) : null;
+        $amount = (int) round(((float) ($b['transaction_amount'] ?? ((int) $c['price_cents'] / 100))) * 100);
+        $new = apply_payment($c, $amount, 'pix', 'pay_' . $mpPaymentId, today(), $paidAt);
+        q("UPDATE pix_charges SET status = 'pago' WHERE mp_payment_id = ?", [$mpPaymentId]);
+        return $new ? 'pix pago e registrado' : 'pix já registrado';
+    }
+    if (in_array($status, ['cancelled', 'expired', 'rejected'], true)) {
+        q("UPDATE pix_charges SET status = 'expirado' WHERE mp_payment_id = ? AND status = 'pendente'", [$mpPaymentId]);
+        return 'pix ' . $status;
+    }
+    return 'pix ' . ($status ?: 'sem status');
 }

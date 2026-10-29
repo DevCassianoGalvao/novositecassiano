@@ -126,7 +126,7 @@ page_start('Configurações', 'configuracoes', $admin);
     <ol class="small" style="display:grid;gap:8px;padding-left:20px;margin:14px 0 0">
       <li>Entre em <b>mercadopago.com.br/developers</b> com a sua conta e vá em <b>Suas integrações</b>. Clique em <b>Criar aplicação</b> (nome livre, ex.: "Site por assinatura"; tipo <b>Pagamentos online</b>).</li>
       <li>Abra a aplicação, vá em <b>Credenciais de produção</b> e copie o <b>Access Token</b> (começa com <code>APP_USR-</code>). Cole no campo abaixo.</li>
-      <li>Em <b>Webhooks</b> (ou "Notificações"), escolha <b>modo produção</b>, cole a URL abaixo e marque os eventos de <b>Planos e assinaturas</b> (assinatura e pagamento recorrente). Salve.</li>
+      <li>Em <b>Webhooks</b> (ou "Notificações"), escolha <b>modo produção</b>, cole a URL abaixo e marque os eventos <b>Planos e assinaturas</b> (cartão recorrente) e <b>Pagamentos</b> (Pix). Salve.</li>
       <li>O Mercado Pago mostra uma <b>assinatura secreta</b> do webhook. Copie e cole no segundo campo (protege contra avisos falsos).</li>
       <li>Clique em <b>Salvar e testar</b>. Se aparecer "conectado", está pronto.</li>
     </ol>

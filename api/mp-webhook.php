@@ -2,7 +2,7 @@
 /**
  * Webhook do Mercado Pago (Planos e assinaturas).
  * Configure em: Mercado Pago > Suas integrações > sua aplicação > Webhooks,
- * eventos "Planos e assinaturas" (assinatura e pagamento recorrente).
+ * eventos "Planos e assinaturas" (cartão recorrente) e "Pagamentos" (Pix).
  * URL: https://SEU-DOMINIO/api/mp-webhook.php
  */
 
@@ -39,7 +39,10 @@ try {
         echo '{"ok":true,"ignored":"sem evento"}';
         exit;
     }
-    if (!mp_signature_valid()) {
+    $sigOk = mp_signature_valid();
+    // Pagamentos Pix: o efeito só acontece depois de conferir o pagamento direto na API do Mercado Pago
+    // com o nosso token, então um aviso falso não libera ninguém. Os outros tópicos exigem assinatura.
+    if (!$sigOk && $topic !== 'payment') {
         wh_log($topic, $dataId, 'recusado', 'assinatura inválida');
         http_response_code(401);
         exit('{"ok":false,"error":"assinatura inválida"}');
@@ -61,6 +64,9 @@ try {
         case 'subscription_authorized_payment':
         case 'authorized_payment':
             $note = mp_handle_authorized_payment($dataId);
+            break;
+        case 'payment':
+            $note = pix_settle($dataId);
             break;
         default:
             $note = 'tópico ignorado';

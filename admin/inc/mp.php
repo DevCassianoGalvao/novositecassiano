@@ -61,7 +61,7 @@ function mp_is_test_token(string $t): bool
     return strpos($t, 'TEST-') === 0;
 }
 
-function mp_create_preapproval(array $customer, string $planName): array
+function mp_create_preapproval(array $customer, string $planName, ?string $startDate = null): array
 {
     $body = [
         'reason'             => 'Site por assinatura · ' . $planName,
@@ -76,6 +76,8 @@ function mp_create_preapproval(array $customer, string $planName): array
         'back_url'           => app_url() . '/site-por-assinatura/obrigado/',
         'status'             => 'pending',
     ];
+    // cliente que já pagou o mês (ex.: via Pix): o cartão só começa a cobrar no próximo vencimento
+    if ($startDate && $startDate > date('Y-m-d')) $body['auto_recurring']['start_date'] = $startDate . 'T09:00:00.000-03:00';
     return mp_request('POST', '/preapproval', $body);
 }
 
@@ -128,4 +130,23 @@ function mp_date_br(?string $iso): ?string
     } catch (Throwable $e) {
         return null;
     }
+}
+
+/** Cobrança Pix (QR Code) pela API de pagamentos. */
+function mp_create_pix(array $c, int $amountCents, string $description): array
+{
+    return mp_request('POST', '/v1/payments', [
+        'transaction_amount' => round($amountCents / 100, 2),
+        'description'        => $description,
+        'payment_method_id'  => 'pix',
+        'payer'              => ['email' => $c['email'], 'first_name' => first_name($c['name'])],
+        'external_reference' => 'c' . $c['id'],
+        'date_of_expiration' => date('Y-m-d\TH:i:s.000P', strtotime('+1 day')),
+        'notification_url'   => app_url() . '/api/mp-webhook.php',
+    ]);
+}
+
+function mp_get_payment(string $id): array
+{
+    return mp_request('GET', '/v1/payments/' . rawurlencode($id));
 }

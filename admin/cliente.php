@@ -61,7 +61,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     flash($ok ? 'Link de assinatura gerado.' : 'Não foi possível gerar o link: ' . $info, $ok ? 'ok' : 'bad');
                     break;
                 case 'sendlink':
-                    if (!$c['mp_init_point']) { flash('Gere o link primeiro.', 'bad'); break; }
                     q("DELETE FROM notifications WHERE customer_id = ? AND kind = 'link' AND ref_date = CURDATE()", [$id]);
                     flash(notify_customer($c, 'link', today()) ? 'Link enviado por e-mail para ' . $c['email'] . '.' : 'Não consegui enviar o e-mail (veja a linha do tempo).', 'ok');
                     break;
@@ -112,7 +111,7 @@ $pays = $c ? q_all('SELECT * FROM payments WHERE customer_id = ? ORDER BY COALES
 $acts = $c ? q_all('SELECT * FROM activity WHERE customer_id = ? ORDER BY id DESC LIMIT 40', [$id]) : [];
 $title = $c ? $c['name'] : 'Novo cliente';
 $f = fn(string $k, string $def = '') => h($c[$k] ?? $def);
-$linkMsg = $c ? 'Oi, ' . first_name($c['name']) . '! Aqui está o link para ativar sua assinatura do ' . $c['plan_name'] . ' (' . money((int) $c['price_cents']) . '/mês): ' . ($c['mp_init_point'] ?? '') : '';
+$linkMsg = $c ? 'Oi, ' . first_name($c['name']) . '! Aqui está o link para pagar sua assinatura do ' . $c['plan_name'] . ' (' . money((int) $c['price_cents']) . '/mês). Dá para pagar no Pix ou no cartão: ' . pay_url($c) : '';
 $d = ($c && $c['next_due_date']) ? days_between(today(), $c['next_due_date']) : null;
 
 page_start($title, 'clientes', $admin);
@@ -130,6 +129,7 @@ page_start($title, 'clientes', $admin);
       <dt>Plano</dt><dd><?= h($c['plan_name']) ?> · <?= h(money((int) $c['price_cents'])) ?>/mês</dd>
       <dt>Próx. vencimento</dt><dd><?= $c['next_due_date'] ? h(fmt_date($c['next_due_date'])) . ($d !== null ? ' <span class="muted">(' . ($d > 0 ? "em $d dia(s)" : ($d === 0 ? 'hoje' : 'atrasado ' . (-$d) . ' dia(s)')) . ')</span>' : '') : '—' ?></dd>
       <dt>Cliente desde</dt><dd><?= h(fmt_date($c['started_at'])) ?></dd>
+      <dt>Cobrança</dt><dd><?= has_card_auto($c) ? 'Cartão, automática' : ($c['billing_mode'] === 'manual' ? 'Pix (lembrete todo mês)' : 'ainda não escolheu') ?></dd>
       <dt>Mercado Pago</dt><dd><?= $c['mp_preapproval_id'] ? h(($c['mp_status'] ?: '—')) . ' · <code>' . h($c['mp_preapproval_id']) . '</code>' : 'sem assinatura criada' ?></dd>
       <?php if ($c['suspended_at']): ?><dt>Suspenso em</dt><dd><?= h(fmt_dt($c['suspended_at'])) ?></dd><?php endif; ?>
     </dl>
@@ -140,18 +140,17 @@ page_start($title, 'clientes', $admin);
         <p class="alert alert--warn">Conecte o Mercado Pago em <a href="configuracoes.php#mp">Configurações</a> para gerar links de pagamento.</p>
       <?php endif; ?>
 
-      <?php if ($c['mp_init_point'] && $c['status'] === 'pendente'): ?>
-        <p class="lbl">Link de pagamento do cliente</p>
-        <div class="copy"><input id="lnk" readonly value="<?= h($c['mp_init_point']) ?>"><button type="button" class="btn" data-copy="lnk">Copiar</button></div>
-        <div class="actions" style="margin-top:12px">
-          <a class="btn btn--primary btn--sm" target="_blank" rel="noopener" href="<?= h(wa_link($c['whatsapp'], $linkMsg)) ?>">Enviar por WhatsApp</a>
-          <form method="post" class="inline"><?= csrf_field() ?><input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="act" value="sendlink"><button class="btn btn--sm">Enviar por e-mail</button></form>
-        </div>
-      <?php endif; ?>
+      <p class="lbl">Link de pagamento do cliente (ele escolhe Pix ou cartão)</p>
+      <div class="copy"><input id="lnk" readonly value="<?= h(pay_url($c)) ?>"><button type="button" class="btn" data-copy="lnk">Copiar</button></div>
+      <div class="actions" style="margin-top:12px">
+        <a class="btn btn--primary btn--sm" target="_blank" rel="noopener" href="<?= h(wa_link($c['whatsapp'], $linkMsg)) ?>">Enviar por WhatsApp</a>
+        <a class="btn btn--sm" target="_blank" rel="noopener" href="<?= h(pay_url($c)) ?>">Abrir a página</a>
+        <form method="post" class="inline"><?= csrf_field() ?><input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="act" value="sendlink"><button class="btn btn--sm">Enviar por e-mail</button></form>
+      </div>
 
       <div class="actions" style="margin-top:14px">
         <?php if ($c['status'] === 'pendente' || !$c['mp_preapproval_id']): ?>
-          <form method="post" class="inline"><?= csrf_field() ?><input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="act" value="genlink"><button class="btn btn--roxo btn--sm"><?= $c['mp_preapproval_id'] ? 'Gerar novo link' : 'Gerar link de pagamento' ?></button></form>
+          <form method="post" class="inline"><?= csrf_field() ?><input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="act" value="genlink"><button class="btn btn--roxo btn--sm"><?= $c['mp_preapproval_id'] ? 'Gerar novo link do cartão' : 'Gerar só o link do cartão' ?></button></form>
         <?php endif; ?>
         <?php if ($c['mp_preapproval_id']): ?>
           <form method="post" class="inline"><?= csrf_field() ?><input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="act" value="sync"><button class="btn btn--sm">Sincronizar com o Mercado Pago</button></form>
@@ -223,7 +222,7 @@ page_start($title, 'clientes', $admin);
     <tr><td data-l="Data"><?= h(fmt_dt($p['paid_at'] ?: $p['created_at'])) ?></td>
       <td data-l="Valor"><?= h(money((int) $p['amount_cents'])) ?></td>
       <td data-l="Situação"><span class="badge badge--<?= $p['status'] === 'pago' ? 'ok' : ($p['status'] === 'falhou' ? 'bad' : 'warn') ?>"><?= h($p['status']) ?></span></td>
-      <td data-l="Forma"><?= $p['method'] === 'manual' ? 'Manual' : 'Mercado Pago' ?></td>
+      <td data-l="Forma"><?= $p['method'] === 'manual' ? 'Manual' : ($p['method'] === 'pix' ? 'Pix' : 'Cartão') ?></td>
       <td data-l="Obs."><?= h($p['note'] ?? '') ?></td></tr>
   <?php endforeach; ?></tbody></table></div><?php endif; ?>
 </div>
