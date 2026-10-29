@@ -420,3 +420,27 @@ body.sa{font-size:18px}
   .sa-port{overflow-x:auto;-webkit-mask-image:none;mask-image:none}
   .sa-port__track{animation:none}
 }
+
+/* logo no hero (sem cabeçalho) + tag ao lado */
+.sa-hero{padding-top:calc(env(safe-area-inset-top,0px) + 56px)}
+.sa-brand{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.sa-brand img{height:54px;width:auto}
+.sa-brand .sa-tag{font-size:10.5px;letter-spacing:.24em;padding:7px 12px;transform:rotate(-3deg);transform-origin:left center}
+.sa-h1{margin-top:26px}
+
+/* foto: card do freelancer bem abaixo do rosto */
+.sa-pain--b{bottom:16%}
+
+/* portfólio: arrastar, voltar e loop infinito */
+.sa-port{overflow-x:auto;overflow-y:hidden;scrollbar-width:none;cursor:grab;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+.sa-port::-webkit-scrollbar{display:none}
+.sa-port.is-drag{cursor:grabbing}
+.sa-port.is-drag .work{pointer-events:none}
+.sa-port__track{animation:none}
+.sa-port .work img{-webkit-user-drag:none;user-select:none}
+.sa-port__nav{display:flex;justify-content:center;gap:10px;margin-top:16px}
+@media (max-width:720px){
+  .sa-hero{padding-top:calc(env(safe-area-inset-top,0px) + 36px)}
+  .sa-brand img{height:44px}
+  .sa-pain--b{bottom:20%}
+}

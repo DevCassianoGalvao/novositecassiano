@@ -147,13 +147,63 @@
         '<div class="work__meta"><div><span class="work__kind">' + esc(p.tipo) + '</span><h3 class="work__name">' + esc(p.nome) + '</h3>' +
         (p.desc ? '<p class="work__desc">' + esc(p.desc) + '</p>' : '') + '</div>' + (p.url ? '<span class="work__go" aria-hidden="true">' + ARROW + '</span>' : '') + '</div></' + tag + '>';
     };
-    // a lista vai duas vezes: a segunda metade é a cópia que fecha o loop sem emenda
-    works.innerHTML = '<div class="sa-port__track">' + sites.map(function (p) { return card(p, false); }).join('') + sites.map(function (p) { return card(p, true); }).join('') + '</div>';
-    works.insertAdjacentHTML('afterend', '<p class="sa-port__hint">Passe o mouse ou toque para pausar. Clique para abrir o site.</p>');
-    var portTrack = $('.sa-port__track', works);
-    // no celular, segurar o dedo pausa
-    works.addEventListener('touchstart', function () { portTrack.style.animationPlayState = 'paused'; }, { passive: true });
-    works.addEventListener('touchend', function () { setTimeout(function () { portTrack.style.animationPlayState = ''; }, 1500); }, { passive: true });
+    // três cópias da lista: o scroll fica sempre na do meio e "pula" sem emenda quando chega numa ponta
+    works.innerHTML = '<div class="sa-port__track">' + sites.map(function (p) { return card(p, true); }).join('') +
+      sites.map(function (p) { return card(p, false); }).join('') + sites.map(function (p) { return card(p, true); }).join('') + '</div>';
+    works.insertAdjacentHTML('afterend', '<div class="sa-port__nav"><button class="slider__btn" type="button" data-dir="-1" aria-label="Site anterior"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>' +
+      '<button class="slider__btn" type="button" data-dir="1" aria-label="Próximo site"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button></div>');
+    var cardsP = $$('.work', works), n = sites.length;
+    var setW = function () { return cardsP[n].offsetLeft - cardsP[0].offsetLeft; };
+    var stepP = function () { return cardsP[1].offsetLeft - cardsP[0].offsetLeft; };
+    var wrap = function () {
+      var w = setW();
+      if (works.scrollLeft < w * 0.5) works.scrollLeft += w;
+      else if (works.scrollLeft > w * 1.5) works.scrollLeft -= w;
+    };
+    var resumeAt = 0, pos = 0;
+    var hold = function (ms) { resumeAt = Date.now() + (ms || 2500); };
+    var startPort = function () { works.scrollLeft = setW(); pos = works.scrollLeft; };
+    if (document.readyState === 'complete') startPort(); else window.addEventListener('load', startPort);
+    startPort();
+    works.addEventListener('scroll', function () { wrap(); if (Date.now() < resumeAt) pos = works.scrollLeft; }, { passive: true });
+
+    // rolagem automática contínua (pausa enquanto a pessoa mexe e volta sozinha)
+    var portVisible = true, last = 0;
+    if ('IntersectionObserver' in window) new IntersectionObserver(function (es) { portVisible = es[0].isIntersecting; }).observe(works);
+    var tick = function (t) {
+      var dt = last ? Math.min(64, t - last) : 16; last = t;
+      if (!reduce && portVisible && Date.now() >= resumeAt && !dragging) {
+        pos += dt * 0.045; // ~45px por segundo
+        works.scrollLeft = pos;
+        if (Math.abs(works.scrollLeft - pos) > 2) pos = works.scrollLeft; // o wrap mudou a posição
+      }
+      window.requestAnimationFrame(tick);
+    };
+    window.requestAnimationFrame(tick);
+
+    // arrastar com o mouse (no celular o dedo já rola nativo)
+    var dragging = false, sx = 0, sl = 0, moved = false;
+    works.addEventListener('pointerdown', function (e) {
+      if (e.pointerType !== 'mouse') return;
+      dragging = true; moved = false; sx = e.clientX; sl = works.scrollLeft; hold();
+    });
+    window.addEventListener('pointermove', function (e) {
+      if (!dragging) return;
+      var dx = e.clientX - sx;
+      if (Math.abs(dx) > 5) { moved = true; works.classList.add('is-drag'); }
+      works.scrollLeft = sl - dx; pos = works.scrollLeft; hold();
+    });
+    window.addEventListener('pointerup', function () { if (!dragging) return; dragging = false; works.classList.remove('is-drag'); pos = works.scrollLeft; hold(); });
+    works.addEventListener('click', function (e) { if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; } }, true);
+    ['touchstart', 'touchmove', 'wheel'].forEach(function (ev) { works.addEventListener(ev, function () { hold(); }, { passive: true }); });
+
+    $$('.sa-port__nav .slider__btn').forEach(function (b) {
+      b.addEventListener('click', function () {
+        hold(3000);
+        works.scrollBy({ left: stepP() * +b.dataset.dir, behavior: 'smooth' });
+        setTimeout(function () { pos = works.scrollLeft; }, 600);
+      });
+    });
   }
 
   /* =========================================================
