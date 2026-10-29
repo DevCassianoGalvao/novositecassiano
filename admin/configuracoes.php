@@ -53,6 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 setting_set('reminder_days', implode(',', $rem) ?: '7,3,0');
                 $wa = preg_replace('/\D/', '', (string) ($_POST['admin_whatsapp'] ?? ''));
                 if (strlen($wa) >= 10) setting_set('admin_whatsapp', phone_digits($wa));
+                foreach ([3, 6, 12] as $m) setting_set('disc_' . $m, (string) max(0, min(60, (int) ($_POST['disc_' . $m] ?? 0))));
                 flash('Regras salvas.');
                 break;
             case 'plans_save':
@@ -186,7 +187,12 @@ page_start('Configurações', 'configuracoes', $admin);
       <label>Lembretes (dias antes, separados por vírgula) <input name="reminder_days" value="<?= h(implode(',', reminder_days())) ?>"></label>
       <label>Seu WhatsApp (nos e-mails) <input name="admin_whatsapp" value="<?= h(admin_wa()) ?>"></label>
     </div>
-    <p class="small muted" style="margin:0">Hoje: lembrete <?= h(implode(', ', reminder_days())) ?> dia(s) antes (0 = no dia). Passou do vencimento + <?= tolerance_days() ?> dia(s) de tolerância sem pagar, o cliente é suspenso e você recebe o aviso "fulano não pagou". Se ele pagar depois, volta sozinho, sem taxa.</p>
+    <div class="row3">
+      <label>Desconto trimestral (%) <input type="number" name="disc_3" min="0" max="60" value="<?= cycle_discount(3) ?>"></label>
+      <label>Desconto semestral (%) <input type="number" name="disc_6" min="0" max="60" value="<?= cycle_discount(6) ?>"></label>
+      <label>Desconto anual (%) <input type="number" name="disc_12" min="0" max="60" value="<?= cycle_discount(12) ?>"></label>
+    </div>
+    <p class="small muted" style="margin:0">Desconto para quem paga o período à vista (Pix ou cartão). O valor aparece na página de pagamento; na página de vendas os percentuais estão no HTML (10%, 15% e 20%). Hoje: lembrete <?= h(implode(', ', reminder_days())) ?> dia(s) antes (0 = no dia). Passou do vencimento + <?= tolerance_days() ?> dia(s) de tolerância sem pagar, o cliente é suspenso e você recebe o aviso "fulano não pagou". Se ele pagar depois, volta sozinho, sem taxa.</p>
     <div><button class="btn btn--roxo"><?= ic('tick') ?><span>Salvar regras</span></button></div>
   </form>
 </div>

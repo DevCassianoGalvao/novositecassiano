@@ -349,6 +349,44 @@
   var dots = $$('.sa-modal__steps i', modal), form = $('#mForm'), submitBtn = $('#mSubmit');
   var chosen = '', lastFocus = null;
 
+  /* ---------- período: mensal, trimestral (-10%), semestral (-15%), anual (-20%) ---------- */
+  var DISC = { 1: 0, 3: 10, 6: 15, 12: 20 }, CYC = { 1: 'Mensal', 3: 'Trimestral', 6: 'Semestral', 12: 'Anual' };
+  var PER = { 1: 'por mês', 3: 'a cada 3 meses', 6: 'a cada 6 meses', 12: 'por ano' };
+  var cycle = 1, mTotal = $('#mTotal');
+  var brl = function (n) { return n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+  var total = function (m, c) { return Math.round(m * 100 * c * (100 - DISC[c]) / 100) / 100; };
+  var perMonth = function (m, c) { return Math.round(total(m, c) / c * 100) / 100; };
+  var short = function (v) { return v % 1 === 0 ? String(v) : brl(v); };
+  var updTotal = function () {
+    if (!mTotal) return;
+    if (!chosen || cycle === 1) { mTotal.hidden = true; return; }
+    var m = PLANS[chosen].preco;
+    mTotal.innerHTML = 'Você paga <b>R$ ' + brl(total(m, cycle)) + '</b> à vista ' + PER[cycle] + ' e economiza <b>R$ ' + brl(m * cycle - total(m, cycle)) + '</b>.';
+    mTotal.hidden = false;
+  };
+  var setCycle = function (c) {
+    cycle = DISC[c] !== undefined ? c : 1;
+    $$('.sa-cycle button').forEach(function (b) { var on = +b.dataset.cycle === cycle; b.setAttribute('aria-checked', on ? 'true' : 'false'); b.tabIndex = on ? 0 : -1; });
+    $$('.sa-plan__price[data-monthly]').forEach(function (p) { $('b', p).textContent = short(perMonth(+p.dataset.monthly, cycle)); });
+    $$('[data-bill]').forEach(function (el) {
+      var m = +el.dataset.bill;
+      el.innerHTML = cycle === 1 ? 'Cobrado todo mês' : 'R$ ' + brl(total(m, cycle)) + ' à vista ' + PER[cycle] + ' · <b>economia de R$ ' + brl(m * cycle - total(m, cycle)) + '</b>';
+    });
+    $$('.sa-opt__price[data-monthly]').forEach(function (p) { p.innerHTML = 'R$ ' + short(perMonth(+p.dataset.monthly, cycle)) + '<small>/mês</small>'; });
+    updTotal();
+  };
+  $$('.sa-cycle').forEach(function (g) {
+    g.addEventListener('click', function (e) { var b = e.target.closest('button[data-cycle]'); if (b) setCycle(+b.dataset.cycle); });
+    g.addEventListener('keydown', function (e) {
+      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].indexOf(e.key) < 0) return;
+      e.preventDefault();
+      var bs = $$('button', g), i = bs.findIndex(function (b) { return +b.dataset.cycle === cycle; });
+      i = (i + (e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 1) + bs.length) % bs.length;
+      setCycle(+bs[i].dataset.cycle); bs[i].focus();
+    });
+  });
+  setCycle(1);
+
   var focusables = function () {
     return $$('button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])', box).filter(function (el) {
       return !el.disabled && !el.closest('[hidden]') && el.offsetParent !== null;
@@ -358,6 +396,7 @@
     chosen = PLANS[key] ? key : '';
     opts.forEach(function (o) { o.setAttribute('aria-checked', o.dataset.pick === chosen ? 'true' : 'false'); o.tabIndex = (o.dataset.pick === chosen || (!chosen && o === opts[0])) ? 0 : -1; });
     if (chosen) pickErr.hidden = true;
+    updTotal();
   };
   var goStep = function (n) {
     step1.hidden = n !== 1; step2.hidden = n !== 2; stepOk.hidden = n !== 'ok';
@@ -411,7 +450,8 @@
   });
   $('#mNext').addEventListener('click', function () {
     if (!chosen) { pickErr.hidden = false; return; }
-    planName.textContent = PLANS[chosen].nome + ' · R$ ' + PLANS[chosen].preco + '/mês';
+    var pm = PLANS[chosen].preco;
+    planName.textContent = PLANS[chosen].nome + ' · ' + CYC[cycle] + ' · ' + (cycle === 1 ? 'R$ ' + pm + '/mês' : 'R$ ' + brl(total(pm, cycle)) + ' à vista (R$ ' + short(perMonth(pm, cycle)) + '/mês)');
     goStep(2);
   });
   $('#mBack').addEventListener('click', function () { goStep(1); });
@@ -445,12 +485,13 @@
       whatsapp: fWhats.value.replace(/\D/g, ''),
       email: fEmail.value.trim(),
       plano: chosen,
+      ciclo: cycle,
       website: fHp.value,
       pagina: location.href
     };
     Object.keys(UTM).forEach(function (k) { payload[k] = UTM[k]; });
 
-    track('Lead', { content_name: 'Plano ' + PLANS[chosen].nome, currency: 'BRL', value: PLANS[chosen].preco });
+    track('Lead', { content_name: 'Plano ' + PLANS[chosen].nome + ' ' + CYC[cycle], currency: 'BRL', value: total(PLANS[chosen].preco, cycle) });
 
     // O lead é gravado no banco (painel /admin) e avisado por e-mail pelo api/assinatura.php.
     submitBtn.classList.add('is-loading');
@@ -471,7 +512,7 @@
       clearTimeout(timer);
       // lead salvo: segue para a página de pagamento (Pix ou cartão)
       if (d && d.ok && d.pay_url && /^https?:\/\//.test(d.pay_url)) {
-        track('InitiateCheckout', { content_name: 'Plano ' + PLANS[chosen].nome, currency: 'BRL', value: PLANS[chosen].preco });
+        track('InitiateCheckout', { content_name: 'Plano ' + PLANS[chosen].nome + ' ' + CYC[cycle], currency: 'BRL', value: total(PLANS[chosen].preco, cycle) });
         $('.btn__label', submitBtn).textContent = 'Abrindo o pagamento...';
         setTimeout(function () { location.href = d.pay_url; }, 250);
         return;

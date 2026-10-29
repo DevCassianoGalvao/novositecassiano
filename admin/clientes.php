@@ -50,7 +50,7 @@ page_start('Clientes', 'clientes', $admin);
       $d = $c['next_due_date'] ? days_between(today(), $c['next_due_date']) : null; ?>
     <tr>
       <td data-l="Cliente"><a class="who" href="cliente.php?id=<?= $c['id'] ?>"><?= avatar($c['name'], 'av--sm') ?><span><b><?= h($c['name']) ?></b><small><?= h($c['business'] ?: $c['email']) ?></small></span></a></td>
-      <td data-l="Plano"><?= h(str_replace('Plano ', '', $c['plan_name'])) ?><br><small class="muted num"><?= h(money((int) $c['price_cents'])) ?>/mês</small></td>
+      <td data-l="Plano"><?= h(str_replace('Plano ', '', $c['plan_name'])) ?> · <?= h(cycle_name($c)) ?><br><small class="muted num"><?= h(cycle_label($c, false)) ?></small></td>
       <td data-l="Status"><?= badge($c['status']) ?></td>
       <td data-l="Vencimento"><?= $c['next_due_date'] ? h(fmt_date($c['next_due_date'])) . ($d !== null && in_array($c['status'], ['ativo', 'atraso'], true) ? '<br><small class="muted">' . ($d > 0 ? "em $d dia(s)" : ($d === 0 ? 'hoje' : 'atrasado ' . (-$d) . ' dia(s)')) . '</small>' : '') : '—' ?></td>
       <td data-l="Site"><?= $c['site_url'] ? '<a class="iconbtn" href="' . h($c['site_url']) . '" target="_blank" rel="noopener" aria-label="Abrir o site">' . ic('globe') . '</a>' : '—' ?></td>

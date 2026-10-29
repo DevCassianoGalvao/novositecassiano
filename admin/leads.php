@@ -46,7 +46,7 @@ page_start('Leads', 'leads', $admin);
     <tr>
       <td data-l="Lead"><a class="who" href="lead.php?id=<?= $l['id'] ?>"><?= avatar($l['name'], 'av--sm') ?><span><b><?= h($l['name']) ?></b><small><?= h($l['email']) ?></small></span></a></td>
       <td data-l="WhatsApp"><a href="<?= h(wa_link($l['whatsapp'])) ?>" target="_blank" rel="noopener"><?= h(phone_pretty($l['whatsapp'])) ?></a></td>
-      <td data-l="Plano"><?= h(ucfirst($l['plan_slug'])) ?></td>
+      <td data-l="Plano"><?= h(ucfirst($l['plan_slug'])) ?><?= (int) ($l['cycle_months'] ?? 1) > 1 ? '<br><small class="muted">' . h(CYCLES[(int) $l['cycle_months']] ?? '') . '</small>' : '' ?></td>
       <td data-l="Origem"><?= h($src) ?></td>
       <td data-l="Status"><span class="badge <?= $l['status'] === 'novo' ? 'badge--new' : ($l['status'] === 'fechado' ? 'badge--ok' : ($l['status'] === 'perdido' ? 'badge--mute' : 'badge--warn')) ?>"><?= h(LEAD_STATUS[$l['status']]) ?></span></td>
       <td data-l="Quando" class="num muted"><?= h(fmt_date($l['created_at'], 'd/m H:i')) ?></td>

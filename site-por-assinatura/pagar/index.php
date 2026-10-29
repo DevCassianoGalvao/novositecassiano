@@ -54,6 +54,16 @@ if ($c && $c['status'] !== 'cancelado' && ($_SERVER['REQUEST_METHOD'] ?? '') ===
                 $okmsg = $m === '' ? 'Sua assinatura foi cancelada. Não haverá novas cobranças.' : 'Cancelei por aqui. O cartão ainda precisa ser desvinculado e o Cassiano já foi avisado para resolver com você.';
                 if ($m !== '') error_log('[pagar] cancel: ' . $m);
             }
+        } elseif ($act === 'cycle') {
+            $m = (int) ($_POST['m'] ?? 1);
+            if (!isset(CYCLES[$m])) {
+                $err = 'Período inválido.';
+            } elseif (has_card_auto($c)) {
+                $err = 'Sua cobrança automática no cartão já está ativa. Para mudar o período, fale comigo.';
+            } elseif ($m !== cycle_months($c)) {
+                q("UPDATE customers SET cycle_months = ?, mp_preapproval_id = IF(mp_status = 'pending' OR mp_status IS NULL, NULL, mp_preapproval_id), mp_init_point = IF(mp_status = 'pending' OR mp_status IS NULL, NULL, mp_init_point), updated_at = NOW() WHERE id = ?", [$m, (int) $c['id']]);
+                log_activity('status', 'Cliente escolheu o período ' . mb_strtolower(CYCLES[$m]), (int) $c['id']);
+            }
         } elseif (!mp_connected()) {
             $err = 'O pagamento online ainda não está disponível. Fale com o Cassiano pelo WhatsApp.';
         } elseif ($act === 'pix') {
@@ -116,19 +126,20 @@ client_head('Sua assinatura');
     ][$st] ?? ''; ?>
   <div class="hi in-up">
     <h1>Olá, <?= h(first_name($c['name'])) ?></h1>
-    <p><?= h($intro) ?></p>
+    <p id="intro"><?= h($intro) ?></p>
   </div>
 
   <section class="glass plan in-up" style="--d:.08s" aria-label="Sua assinatura">
     <div class="plan__top">
       <div>
-        <span class="plan__name"><?= h($c['plan_name']) ?></span>
-        <div class="plan__price"><b><?= h(money((int) $c['price_cents'])) ?></b><span>por mês</span></div>
-        <span class="badge b-<?= $badge[1] ?>"><?= h($badge[0]) ?></span>
+        <span class="plan__name"><?= h($c['plan_name']) ?> · <?= h(cycle_name($c)) ?></span>
+        <div class="plan__price"><b><?= h(money(cycle_amount($c))) ?></b><span><?= h([1 => 'por mês', 3 => 'a cada 3 meses', 6 => 'a cada 6 meses', 12 => 'por ano'][cycle_months($c)]) ?></span></div>
+        <?php if (cycle_months($c) > 1): ?><p class="plan__eq">Equivale a <b><?= h(money(monthly_equiv($c))) ?>/mês</b> · você economiza <b><?= h(money((int) $c['price_cents'] * cycle_months($c) - cycle_amount($c))) ?></b></p><?php endif; ?>
+        <span class="badge b-<?= $badge[1] ?>" id="planBadge"><?= h($badge[0]) ?></span>
       </div>
       <div class="plan__orb" aria-hidden="true"><i></i><?= $sp() ?></div>
     </div>
-    <?php if ($st === 'ativo'): ?><p class="plan__msg">Próximo vencimento em <b><?= h((string) $due) ?></b>.<?= $auto ? ' Cobrança automática no cartão.' : ' Você recebe um lembrete por e-mail antes.' ?></p>
+    <?php if ($st === 'ativo'): ?><p class="plan__msg" id="planMsg">Próximo vencimento em <b><?= h((string) $due) ?></b>.<?= $auto ? ' Cobrança automática no cartão.' : ' Você recebe um lembrete por e-mail antes.' ?></p>
     <?php elseif ($st === 'atraso'): ?><p class="plan__msg">Venceu em <b><?= h((string) $due) ?></b>. Pague até <b><?= h((string) $limit) ?></b> para o site não sair do ar.</p>
     <?php elseif ($st === 'suspenso'): ?><p class="plan__msg">Pagou, o site volta na hora, <b>sem taxa nenhuma</b>.</p>
     <?php endif; ?>
@@ -162,25 +173,38 @@ client_head('Sua assinatura');
         <a class="btn btn--green btn--block" href="../briefing/?t=<?= h($c['portal_token']) ?>"><?= ic('file') ?>Preencher o briefing</a>
       </div>
     </section>
-    <?php if (!$auto): ?><form method="post"><input type="hidden" name="t" value="<?= h($c['portal_token']) ?>"><button class="btn btn--ghost btn--block" name="act" value="card"><?= ic('card') ?>Prefiro pagar no cartão</button></form><?php endif; ?>
+    <?php if (!$auto): ?><form method="post" class="alt" id="cardAlt"><input type="hidden" name="t" value="<?= h($c['portal_token']) ?>"><button class="btn btn--ghost btn--block" name="act" value="card"><?= ic('card') ?>Prefiro pagar no cartão</button></form><?php endif; ?>
 
   <?php else: ?>
     <?php if ($st !== 'ativo'): ?>
       <p class="safe in-up" style="--d:.14s"><?= ic('shield') ?><span><b>Sem fidelidade.</b> Você pode cancelar quando quiser, pelo link que chega no seu e-mail, sem precisar de conta nem falar comigo. Cancelou, não é cobrado de novo.</span></p>
     <?php endif; ?>
-    <div class="sec in-up" style="--d:.18s"><h2><?= $st === 'ativo' ? 'Forma de pagamento' : 'Como você quer pagar?' ?></h2><?php if ($st === 'ativo'): ?><span><?= $auto ? 'cartão automático' : 'Pix todo mês' ?></span><?php endif; ?></div>
-    <?php if ($st === 'ativo'): ?><p class="in-up" style="--d:.2s;font-size:15px;margin-top:-4px"><?= $auto ? 'Está tudo certo. Se quiser, você pode adiantar a próxima mensalidade pelo Pix.' : 'Está tudo certo. Se quiser parar de pagar todo mês, deixe a cobrança automática no cartão.' ?></p><?php endif; ?>
+    <?php if (!$auto): $mNow = cycle_months($c); ?>
+    <div class="sec in-up" style="--d:.16s"><h2><?= $st === 'ativo' ? 'Próximo período' : 'Escolha o período' ?></h2><span>à vista sai mais barato</span></div>
+    <form method="post" class="cycles in-up" style="--d:.17s" aria-label="Período">
+      <input type="hidden" name="t" value="<?= h($c['portal_token']) ?>"><input type="hidden" name="act" value="cycle">
+      <?php foreach (CYCLES as $m => $name): $amt = period_amount((int) $c['price_cents'], $m); $d = cycle_discount($m); ?>
+        <button class="cyc<?= $m === $mNow ? ' is-on' : '' ?>" name="m" value="<?= $m ?>" type="submit" aria-pressed="<?= $m === $mNow ? 'true' : 'false' ?>">
+          <span class="cyc__top"><b><?= h($name) ?></b><?php if ($d): ?><em>-<?= $d ?>%</em><?php endif; ?></span>
+          <strong><?= h(money((int) round($amt / $m))) ?><small>/mês</small></strong>
+          <span class="cyc__tot"><?= $m === 1 ? 'cobrado todo mês' : h(money($amt)) . ' à vista' ?></span>
+        </button>
+      <?php endforeach; ?>
+    </form>
+    <?php endif; ?>
+    <div class="sec in-up" style="--d:.18s"><h2><?= $st === 'ativo' ? 'Forma de pagamento' : 'Como você quer pagar?' ?></h2><?php if ($st === 'ativo'): ?><span><?= $auto ? 'cartão automático' : 'hoje: Pix' ?></span><?php endif; ?></div>
+    <?php if ($st === 'ativo'): ?><p class="in-up" style="--d:.2s;font-size:15px;margin-top:-4px"><?= $auto ? 'Está tudo certo. Se quiser, você pode adiantar a próxima mensalidade pelo Pix.' : 'Está tudo certo. Se preferir não se preocupar com o próximo pagamento, deixe a cobrança automática no cartão.' ?></p><?php endif; ?>
     <form method="post" class="opts in-up" style="--d:.22s">
       <input type="hidden" name="t" value="<?= h($c['portal_token']) ?>">
       <button class="opt opt--pix" name="act" value="pix" type="submit">
         <span class="opt__ic"><?= ic('qr') ?></span>
-        <span><strong><?= $st === 'ativo' ? 'Adiantar com Pix' : 'Pix' ?> <span class="pill">na hora</span></strong><small>O QR Code aparece aqui mesmo. Pagou, está liberado. Todo mês chega um lembrete com o link.</small></span>
+        <span><strong><?= $st === 'ativo' ? 'Adiantar com Pix' : 'Pix' ?> <span class="pill">na hora</span></strong><small><?= cycle_months($c) > 1 ? 'Paga ' . h(money(cycle_amount($c))) . ' à vista e fica em dia por ' . cycle_months($c) . ' meses. O QR Code aparece aqui mesmo.' : 'O QR Code aparece aqui mesmo. Pagou, está liberado. Todo mês chega um lembrete com o link.' ?></small></span>
         <?= ic('chevron', 'go') ?>
       </button>
       <?php if (!$auto): ?>
       <button class="opt" name="act" value="card" type="submit">
         <span class="opt__ic"><?= ic('card') ?></span>
-        <span><strong>Cartão de crédito <span class="pill pill--roxo">automático</span></strong><small>Cobra sozinho todo mês, sem você precisar lembrar. Pagamento seguro pelo Mercado Pago.</small></span>
+        <span><strong>Cartão de crédito <span class="pill pill--roxo">automático</span></strong><small><?= cycle_months($c) > 1 ? 'Cobra ' . h(money(cycle_amount($c))) . ' ' . h([3 => 'a cada 3 meses', 6 => 'a cada 6 meses', 12 => 'uma vez por ano'][cycle_months($c)]) . ' no cartão, sem você precisar lembrar.' : 'Cobra sozinho todo mês, sem você precisar lembrar.' ?> Pagamento seguro pelo Mercado Pago.</small></span>
         <?= ic('chevron', 'go') ?>
       </button>
       <?php endif; ?>
@@ -224,7 +248,11 @@ client_head('Sua assinatura');
   var box=document.getElementById('pixBox'); if(!box)return;
   var t=box.getAttribute('data-t'),id=box.getAttribute('data-id'),tries=0,stop=false;
   function paid(){
-    stop=true;document.getElementById('pixWait').hidden=true;document.getElementById('pixDone').hidden=false;window.scrollTo({top:0,behavior:'smooth'});
+    stop=true;document.getElementById('pixWait').hidden=true;document.getElementById('pixDone').hidden=false;
+    var alt=document.getElementById('cardAlt');if(alt)alt.hidden=true;
+    var bd=document.getElementById('planBadge');if(bd){bd.className='badge b-ok';bd.textContent='Pago';}
+    var it=document.getElementById('intro');if(it)it.textContent='Pagamento confirmado. Agora é só me contar sobre o seu negócio.';
+    box.scrollIntoView({behavior:'smooth',block:'center'});
     var v=parseFloat(box.getAttribute('data-value'))||0;
     try{window.dataLayer=window.dataLayer||[];window.dataLayer.push({event:'Purchase',value:v,currency:'BRL'})}catch(e){}
     try{if(window.fbq)window.fbq('track','Purchase',{value:v,currency:'BRL'})}catch(e){}

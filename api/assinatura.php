@@ -68,6 +68,9 @@ $whatsapp = preg_replace('/\D/', '', (string) ($data['whatsapp'] ?? ''));
 $email    = $clean($data['email'] ?? '', 120);
 $plano    = $clean($data['plano'] ?? '', 20);
 $pagina   = $clean($data['pagina'] ?? '', 300);
+$ciclo    = (int) ($data['ciclo'] ?? 1);
+if (!in_array($ciclo, [1, 3, 6, 12], true)) $ciclo = 1;
+$ciclos   = [1 => 'mensal', 3 => 'trimestral (-10%)', 6 => 'semestral (-15%)', 12 => 'anual (-20%)'];
 $utm = [];
 foreach (['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'] as $k) {
     if (!empty($data[$k])) $utm[$k] = $clean($data[$k], 200);
@@ -81,8 +84,8 @@ if (mb_strlen($nome) < 2 || !preg_match('/^\d{10,13}$/', $whatsapp) || !filter_v
 $leadId = null;
 try {
     if (db_ready()) {
-        q('INSERT INTO leads (name, whatsapp, email, plan_slug, status, source_page, utm, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
-            [$nome, $whatsapp, $email, $plano, 'novo', $pagina, $utm ? json_encode($utm, JSON_UNESCAPED_UNICODE) : null]);
+        q('INSERT INTO leads (name, whatsapp, email, plan_slug, cycle_months, status, source_page, utm, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
+            [$nome, $whatsapp, $email, $plano, $ciclo, 'novo', $pagina, $utm ? json_encode($utm, JSON_UNESCAPED_UNICODE) : null]);
         $leadId = (int) db()->lastInsertId();
         log_activity('lead', "Novo lead: $nome ({$planos[$plano]})", null, $leadId);
 
@@ -93,7 +96,7 @@ try {
             $cust = q_one("SELECT id, status FROM customers WHERE email = ? AND status <> 'cancelado' ORDER BY id DESC LIMIT 1", [$email]);
             $isSubscriber = false;
             if ($cust && $cust['status'] === 'pendente') {
-                q('UPDATE customers SET name = ?, whatsapp = ?, plan_id = ?, price_cents = ?, updated_at = NOW() WHERE id = ?', [$nome, $whatsapp, (int) $planRow['id'], (int) $planRow['price_cents'], (int) $cust['id']]);
+                q('UPDATE customers SET name = ?, whatsapp = ?, plan_id = ?, price_cents = ?, cycle_months = ?, mp_preapproval_id = IF(mp_status = \'pending\', NULL, mp_preapproval_id), mp_init_point = IF(mp_status = \'pending\', NULL, mp_init_point), updated_at = NOW() WHERE id = ?', [$nome, $whatsapp, (int) $planRow['id'], (int) $planRow['price_cents'], $ciclo, (int) $cust['id']]);
                 $custId = (int) $cust['id'];
             } elseif ($cust) {
                 // já é assinante: o link pessoal NUNCA volta para o navegador (qualquer um poderia digitar o e-mail
@@ -101,8 +104,8 @@ try {
                 $custId = (int) $cust['id'];
                 $isSubscriber = true;
             } else {
-                q('INSERT INTO customers (name, email, whatsapp, plan_id, price_cents, status, billing_mode, lead_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
-                    [$nome, $email, $whatsapp, (int) $planRow['id'], (int) $planRow['price_cents'], 'pendente', 'mercadopago', $leadId]);
+                q('INSERT INTO customers (name, email, whatsapp, plan_id, price_cents, cycle_months, status, billing_mode, lead_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
+                    [$nome, $email, $whatsapp, (int) $planRow['id'], (int) $planRow['price_cents'], $ciclo, 'pendente', 'mercadopago', $leadId]);
                 $custId = (int) db()->lastInsertId();
                 log_activity('cliente', 'Cliente criado automaticamente pelo formulário da página', $custId, $leadId);
             }
@@ -144,6 +147,7 @@ $html = '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;
     . $row('WhatsApp', '<a style="color:#00EF9E" href="' . $h($wa) . '">' . $h($whatsapp) . '</a>')
     . $row('E-mail', '<a style="color:#A75FFF" href="mailto:' . $h($email) . '">' . $h($email) . '</a>')
     . $row('Plano', $h($planos[$plano]))
+    . $row('Período', $h(ucfirst($ciclos[$ciclo])))
     . $row('Recebido em', $h($quando));
 foreach ($utm as $k => $v) $html .= $row($h($k), $h($v));
 $html .= '</table>'
@@ -152,7 +156,7 @@ $html .= '</table>'
     . '</div>'
     . '<p style="margin:0;padding:0 28px 22px;font-size:12px;color:#6F6884">Página: ' . $h($pagina) . '</p></div>';
 
-$text = "Novo lead · site por assinatura\n\nNome: $nome\nWhatsApp: $whatsapp ($wa)\nE-mail: $email\nPlano: {$planos[$plano]}\nRecebido em: $quando\n";
+$text = "Novo lead · site por assinatura\n\nNome: $nome\nWhatsApp: $whatsapp ($wa)\nE-mail: $email\nPlano: {$planos[$plano]}\nPeríodo: {$ciclos[$ciclo]}\nRecebido em: $quando\n";
 foreach ($utm as $k => $v) $text .= "$k: $v\n";
 
 $payload = [

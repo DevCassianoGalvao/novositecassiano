@@ -31,7 +31,7 @@
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600&family=Space+Grotesk:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600&family=Space+Grotesk:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap"></noscript>
 <link rel="stylesheet" href="/assets/css/style.css?v=20261028-2210">
-<link rel="stylesheet" href="/site-por-assinatura/assinatura.css?v=20261028-2210">
+<link rel="stylesheet" href="/site-por-assinatura/assinatura.css?v=20261029-0300">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@graph":[
 {"@type":"Service","name":"Site por assinatura","serviceType":"Criação de sites","provider":{"@type":"ProfessionalService","name":"Cassiano Galvão","url":"https://cassianogalvao.com.br/","telephone":"+55-22-99756-0717","address":{"@type":"PostalAddress","addressLocality":"Nova Friburgo","addressRegion":"RJ","addressCountry":"BR"}},"areaServed":"BR","url":"https://cassianogalvao.com.br/site-por-assinatura/",
@@ -284,10 +284,21 @@
       <h2 class="h2">ESCOLHA O SEU. <em>O RESTO É COMIGO.</em></h2>
     </header>
 
+    <div class="sa-cycle-wrap" data-reveal>
+      <div class="sa-cycle" role="radiogroup" aria-label="Período de pagamento">
+        <button type="button" role="radio" aria-checked="true" data-cycle="1">Mensal</button>
+        <button type="button" role="radio" aria-checked="false" data-cycle="3">Trimestral <em>-10%</em></button>
+        <button type="button" role="radio" aria-checked="false" data-cycle="6">Semestral <em>-15%</em></button>
+        <button type="button" role="radio" aria-checked="false" data-cycle="12">Anual <em>-20%</em></button>
+      </div>
+      <p class="sa-cycle__note">Pagando o período à vista, no Pix ou no cartão, você economiza até 20%.</p>
+    </div>
+
     <div class="sa-cards" data-stagger>
       <article class="sa-plan glass spot">
         <p class="sa-plan__name">Plano Essencial</p>
-        <p class="sa-plan__price"><small>R$</small><b>67</b><span>/mês</span></p>
+        <p class="sa-plan__price" data-monthly="67"><small>R$</small><b>67</b><span>/mês</span></p>
+        <p class="sa-plan__bill" data-bill="67">Cobrado todo mês</p>
         <p class="sa-plan__desc">Pra quem precisa estar na internet com cara de empresa séria. Tudo o que o cliente precisa saber, numa página só.</p>
         <p class="sa-plan__site">One page <span>(site de uma página só)</span></p>
         <ul class="sa-feats">
@@ -308,7 +319,8 @@
       <article class="sa-plan sa-plan--top glass spot">
         <span class="sa-plan__badge">Mais escolhido</span>
         <p class="sa-plan__name">Plano Completo</p>
-        <p class="sa-plan__price"><small>R$</small><b>97</b><span>/mês</span></p>
+        <p class="sa-plan__price" data-monthly="97"><small>R$</small><b>97</b><span>/mês</span></p>
+        <p class="sa-plan__bill" data-bill="97">Cobrado todo mês</p>
         <p class="sa-plan__desc">Pra quem quer mostrar a empresa inteira: serviços, história, contato, cada um no seu lugar. E com um ajuste por mês pra manter tudo atualizado.</p>
         <p class="sa-plan__site">Institucional <span>com até 4 páginas</span></p>
         <ul class="sa-feats">
@@ -330,7 +342,7 @@
     <div class="sa-plans__after" data-reveal>
       <p>Os dois planos saem com a mesma base técnica. A diferença está no tamanho do site e nos ajustes mensais.</p>
       <p class="sa-tip"><span class="hand">Dica:</span> Quer um site de uma página só, mas com ajuste todo mês? Escolha o <b>Completo</b>. Você decide se ele vai ser one page ou institucional.</p>
-      <p class="sa-fine">Precisa de mais páginas? Cada página extra custa + R$ 20/mês. Domínio não incluso.</p>
+      <p class="sa-fine">Precisa de mais páginas? Cada página extra custa + R$ 20/mês. Domínio não incluso. Sem fidelidade: cancele quando quiser.</p>
     </div>
   </div>
 </section>
@@ -491,17 +503,25 @@
       <div class="sa-opts" role="radiogroup" aria-labelledby="mTitle1">
         <button type="button" class="sa-opt" role="radio" aria-checked="false" data-pick="essencial">
           <span class="sa-opt__radio"></span>
-          <span class="sa-opt__head"><b>Essencial</b><span class="sa-opt__price">R$ 67<small>/mês</small></span></span>
+          <span class="sa-opt__head"><b>Essencial</b><span class="sa-opt__price" data-monthly="67">R$ 67<small>/mês</small></span></span>
           <ul><li>Site one page</li><li>Copy + design em até 48h</li><li>SEO, GEO e velocidade</li><li>Hospedagem e suporte</li></ul>
         </button>
         <button type="button" class="sa-opt sa-opt--top" role="radio" aria-checked="false" data-pick="completo">
           <span class="sa-opt__badge">Mais escolhido</span>
           <span class="sa-opt__radio"></span>
-          <span class="sa-opt__head"><b>Completo</b><span class="sa-opt__price">R$ 97<small>/mês</small></span></span>
+          <span class="sa-opt__head"><b>Completo</b><span class="sa-opt__price" data-monthly="97">R$ 97<small>/mês</small></span></span>
           <ul><li>Até 4 páginas (ou one page)</li><li>Copy + design em até 48h</li><li>SEO, GEO e velocidade</li><li>Hospedagem e suporte</li><li><b>1 ajuste por mês sem custo</b></li></ul>
         </button>
       </div>
       <p class="sa-m__hint">Quer one page com ajuste mensal? Escolha o Completo.</p>
+      <p class="sa-m__label" id="mCycleL">Como prefere pagar?</p>
+      <div class="sa-cycle sa-cycle--m" role="radiogroup" aria-labelledby="mCycleL">
+        <button type="button" role="radio" aria-checked="true" data-cycle="1">Mensal</button>
+        <button type="button" role="radio" aria-checked="false" data-cycle="3">Trimestral <em>-10%</em></button>
+        <button type="button" role="radio" aria-checked="false" data-cycle="6">Semestral <em>-15%</em></button>
+        <button type="button" role="radio" aria-checked="false" data-cycle="12">Anual <em>-20%</em></button>
+      </div>
+      <p class="sa-m__total" id="mTotal" hidden></p>
       <p class="sa-m__err" id="mPickErr" hidden>Escolhe um dos planos pra continuar.</p>
       <button class="btn btn--green btn--block" type="button" id="mNext">Continuar <svg aria-hidden="true"><use href="#i-arrow"/></svg></button>
     </div>
@@ -543,6 +563,6 @@
 
 <script defer src="/api/tags.php"></script>
 <script defer src="/assets/js/data.js?v=20261028-2210"></script>
-<script defer src="/site-por-assinatura/assinatura.js?v=20261029-0030"></script>
+<script defer src="/site-por-assinatura/assinatura.js?v=20261029-0300"></script>
 </body>
 </html>

@@ -149,3 +149,12 @@ As migrações `003_briefing.sql` e `004_briefing_etapas.sql` criam as tabelas d
 - Painel e páginas do cliente não abrem dentro de outros sites (proteção contra clique enganado), a sessão do painel expira após 8 horas sem uso e o "Sair" exige o botão (não funciona por link).
 - Adicionar outro administrador pede a sua senha atual. Erros do PHP não aparecem para o visitante (ficam no log).
 - Se o site passar a usar a Cloudflare, coloque `TRUST_CLOUDFLARE=1` no `.env`.
+
+### 8.11 Períodos com desconto (trimestral, semestral, anual)
+
+A migração `005_ciclos.sql` guarda o período de cada cliente: depois do deploy, abra `/admin/install.php` e clique em "Criar / atualizar tabelas".
+
+- Na página de vendas e na página de pagamento o cliente escolhe Mensal, Trimestral (-10%), Semestral (-15%) ou Anual (-20%). Pix cobra o período inteiro à vista; no cartão, a assinatura do Mercado Pago cobra o valor do período a cada 3, 6 ou 12 meses.
+- O vencimento avança pelo período pago. Os lembretes (7, 3 e 0 dias) valem para o fim de cada período.
+- Os percentuais da página de pagamento e do painel ficam em Configurações > Regras de cobrança. Os da página de vendas estão no HTML (`assinatura.js`, `DISC`), então, se mudar lá, mude aqui também.
+- O briefing aceita até 100 MB de arquivos por cliente; acima disso ele cola um link (Drive, OneDrive...) no campo próprio.

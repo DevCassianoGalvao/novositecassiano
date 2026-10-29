@@ -73,15 +73,15 @@ if ($isPost && isset($_POST['a'])) {
             $f = $map[$field];
             $file = $_FILES['file'] ?? null;
             if (!$file || !is_array($file) || is_array($file['name'])) bf_json(['ok' => false, 'error' => 'Nenhum arquivo recebido.'], 400);
-            if ($file['error'] === UPLOAD_ERR_INI_SIZE || $file['error'] === UPLOAD_ERR_FORM_SIZE) bf_json(['ok' => false, 'error' => 'Arquivo grande demais. O limite é 15 MB. Se precisar, me manda pelo WhatsApp.']);
+            if ($file['error'] === UPLOAD_ERR_INI_SIZE || $file['error'] === UPLOAD_ERR_FORM_SIZE) bf_json(['ok' => false, 'limit' => true, 'error' => 'Esse arquivo passa de 15 MB. Mande por link (Google Drive, OneDrive...) no campo "Prefere mandar por link?" logo abaixo.']);
             if ($file['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($file['tmp_name'])) bf_json(['ok' => false, 'error' => 'Não consegui receber o arquivo. Tente de novo.']);
-            if ($file['size'] > BRIEFING_MAX_FILE) bf_json(['ok' => false, 'error' => 'Arquivo grande demais. O limite é 15 MB. Se precisar, me manda pelo WhatsApp.']);
+            if ($file['size'] > BRIEFING_MAX_FILE) bf_json(['ok' => false, 'limit' => true, 'error' => 'Esse arquivo passa de 15 MB. Mande por link (Google Drive, OneDrive...) no campo "Prefere mandar por link?" logo abaixo.']);
             $ext = briefing_ext_ok((string) $file['name'], (string) $f['accept']);
             if (!$ext) bf_json(['ok' => false, 'error' => 'Tipo de arquivo não aceito aqui (aceito: ' . strtoupper(str_replace(',', ', ', (string) $f['accept'])) . ').']);
             $all = briefing_files($cid);
             $total = array_sum(array_map('count', $all));
             $bytes = (int) q_val('SELECT COALESCE(SUM(size_bytes),0) FROM briefing_files WHERE customer_id = ?', [$cid]);
-            if ($bytes + (int) $file['size'] > 300 * 1024 * 1024) bf_json(['ok' => false, 'error' => 'Você já enviou o limite de arquivos por aqui. O resto me manda pelo WhatsApp.']);
+            if ($bytes + (int) $file['size'] > 100 * 1024 * 1024) bf_json(['ok' => false, 'limit' => true, 'error' => 'Os arquivos passaram do limite de 100 MB por aqui. Mande o restante por link (Google Drive, OneDrive...) no campo "Prefere mandar por link?" logo abaixo.']);
             if (count($all[$field] ?? []) >= (int) $f['max'] || $total >= BRIEFING_MAX_FILES) bf_json(['ok' => false, 'error' => 'Limite de arquivos neste campo: ' . (int) $f['max'] . '.']);
             $stored = bin2hex(random_bytes(10)) . '.' . $ext;
             if (!move_uploaded_file($file['tmp_name'], briefing_dir($cid) . '/' . $stored)) bf_json(['ok' => false, 'error' => 'Não consegui salvar o arquivo.']);
@@ -256,6 +256,7 @@ client_head('Briefing do seu site', '&family=Cormorant+Garamond:wght@500;600&fam
   .next li:first-child span{color:#03140D;background:var(--verde);border-color:var(--verde)}
   .final .acts{display:grid;gap:10px}
   .anim{animation:up .55s var(--ease) both}
+  .fld.pulse textarea{border-color:var(--verde);box-shadow:0 0 0 4px rgba(0,239,158,.22)}
   @media (max-width:560px){.cards{grid-template-columns:1fr 1fr}.clr{gap:8px}.clr label{padding:8px}.clr input[type=color]{height:46px}.panel{padding:18px 16px}.rev dl{grid-template-columns:1fr;gap:2px}.rev dd{margin-bottom:8px}}
   @media (max-width:440px){.steps-top,.nav{margin-left:-14px;margin-right:-14px;padding-left:14px;padding-right:14px}}
   @media (max-width:360px){.cards{grid-template-columns:1fr}}
@@ -400,7 +401,7 @@ client_head('Briefing do seu site', '&family=Cormorant+Garamond:wght@500;600&fam
         var fl=[].slice.call(e.target.files);e.target.value='';msg.textContent='';msg.className='upmsg';
         (function next(){if(!fl.length){if(msg.className==='upmsg')msg.textContent='';return}var one=fl.shift();msg.className='upmsg';msg.textContent='Enviando '+one.name+'…';
           var fd=new FormData();fd.append('t',B.t);fd.append('a','upload');fd.append('field',k);fd.append('file',one);
-          fetch(location.pathname,{method:'POST',body:fd,credentials:'same-origin'}).then(function(r){return r.json()}).then(function(r){if(r&&r.ok){F[k]=r.files;draw();delete errs[k];next()}else{msg.className='upmsg is-bad';msg.textContent=(r&&r.error)||'Não consegui enviar.';next()}}).catch(function(){msg.className='upmsg is-bad';msg.textContent='Falha de conexão no envio. Tente de novo.';})})();
+          fetch(location.pathname,{method:'POST',body:fd,credentials:'same-origin'}).then(function(r){return r.json()}).then(function(r){if(r&&r.ok){F[k]=r.files;draw();delete errs[k];next()}else{msg.className='upmsg is-bad';msg.textContent=(r&&r.error)||'Não consegui enviar.';if(r&&r.limit)pointLink();next()}}).catch(function(){msg.className='upmsg is-bad';msg.textContent='Falha de conexão no envio. Tente de novo.';})})();
       }});
       var drop=$('label',{class:'drop'},[fi,$('span',{class:'di'},[icon('download')]),$('b',{},[f.max>1?'Toque para escolher os arquivos':'Toque para escolher o arquivo']),$('span',{},[shown+' · até 15 MB cada'+(f.max>1?' · até '+f.max:'')])]);
       ['dragenter','dragover'].forEach(function(n){drop.addEventListener(n,function(){drop.classList.add('is-over')})});
@@ -416,6 +417,7 @@ client_head('Briefing do seu site', '&family=Cormorant+Garamond:wght@500;600&fam
     return w;
   }
 
+  function pointLink(){var el=document.getElementById('f_arquivos_link');if(!el)return;var w=el.closest('.fld');if(w){w.classList.add('pulse');setTimeout(function(){w.classList.remove('pulse')},2400)}el.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(function(){el.focus({preventScroll:true})},500)}
   function fmt(f){
     var v=D[f.key];
     if(f.type==='files')return (F[f.key]||[]).map(function(x){return x.name}).join(', ');
@@ -432,7 +434,7 @@ client_head('Briefing do seu site', '&family=Cormorant+Garamond:wght@500;600&fam
 
   function validate(i){
     var ok=true;errs={};
-    steps[i].fields.forEach(function(f){if(missing(f)){errs[f.key]=f.type==='files'?'Envie um arquivo ou marque a opção abaixo.':'Preencha este campo para continuar.';ok=false}});
+    steps[i].fields.forEach(function(f){if(missing(f)){errs[f.key]=f.type==='files'?'Envie o arquivo, cole um link no campo "Prefere mandar por link?" ou marque a opção abaixo.':'Preencha este campo para continuar.';ok=false}});
     if(!ok)setTimeout(function(){var e=document.querySelector('.fld.bad');if(e){e.scrollIntoView({behavior:'smooth',block:'center'});var inp=e.querySelector('input,textarea,select');if(inp&&inp.type!=='file')inp.focus({preventScroll:true})}},60);
     return ok;
   }

@@ -34,9 +34,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 flash('Confira nome, e-mail, WhatsApp, plano e valor.', 'bad');
                 redirect($id ? $back : 'cliente.php?id=0');
             }
-            $data = [$name, clean_text($_POST['business'] ?? '', 120) ?: null, $email, $wa, clean_text($_POST['site_url'] ?? '', 255) ?: null, (int) $plan['id'], $price, clean_text($_POST['notes'] ?? '', 4000) ?: null];
+            $cm = (int) ($_POST['cycle_months'] ?? 1); if (!isset(CYCLES[$cm])) $cm = 1;
+            $data = [$name, clean_text($_POST['business'] ?? '', 120) ?: null, $email, $wa, clean_text($_POST['site_url'] ?? '', 255) ?: null, (int) $plan['id'], $price, $cm, clean_text($_POST['notes'] ?? '', 4000) ?: null];
             if ($act === 'create') {
-                q('INSERT INTO customers (name, business, email, whatsapp, site_url, plan_id, price_cents, notes, status, billing_mode, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())', array_merge($data, ['pendente', 'mercadopago']));
+                q('INSERT INTO customers (name, business, email, whatsapp, site_url, plan_id, price_cents, cycle_months, notes, status, billing_mode, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())', array_merge($data, ['pendente', 'mercadopago']));
                 $newId = (int) db()->lastInsertId();
                 log_activity('cliente', 'Cliente criado manualmente', $newId);
                 flash('Cliente criado. Gere o link de pagamento abaixo.');
@@ -44,12 +45,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $msgs = ['Dados salvos.'];
             $type = 'ok';
-            if ($price !== (int) $c['price_cents'] && $c['mp_preapproval_id'] && $c['status'] !== 'cancelado' && mp_connected()) {
-                $r = mp_request('PUT', '/preapproval/' . rawurlencode($c['mp_preapproval_id']), ['auto_recurring' => ['transaction_amount' => round($price / 100, 2), 'currency_id' => 'BRL']]);
+            $newAmt = period_amount($price, $cm);
+            if ($cm !== cycle_months($c) && has_card_auto($c)) { $msgs[] = 'Atenção: o cartão continua cobrando no período antigo. Para mudar, gere um novo link do cartão.'; $type = 'warn'; }
+            elseif ($cm !== cycle_months($c) && $c['mp_preapproval_id'] && $c['mp_status'] === 'pending') { q('UPDATE customers SET mp_preapproval_id = NULL, mp_init_point = NULL WHERE id = ?', [$id]); }
+            if ($newAmt !== cycle_amount($c) && $cm === cycle_months($c) && $c['mp_preapproval_id'] && $c['status'] !== 'cancelado' && mp_connected()) {
+                $r = mp_request('PUT', '/preapproval/' . rawurlencode($c['mp_preapproval_id']), ['auto_recurring' => ['transaction_amount' => round($newAmt / 100, 2), 'currency_id' => 'BRL']]);
                 if ($r['error'] !== '') { $msgs[] = 'Atenção: não consegui atualizar o valor no Mercado Pago (' . $r['error'] . ').'; $type = 'warn'; }
                 else $msgs[] = 'Valor atualizado também no Mercado Pago (vale a partir da próxima cobrança).';
             }
-            q('UPDATE customers SET name=?, business=?, email=?, whatsapp=?, site_url=?, plan_id=?, price_cents=?, notes=?, updated_at=NOW() WHERE id=?', array_merge($data, [$id]));
+            q('UPDATE customers SET name=?, business=?, email=?, whatsapp=?, site_url=?, plan_id=?, price_cents=?, cycle_months=?, notes=?, updated_at=NOW() WHERE id=?', array_merge($data, [$id]));
             log_activity('cliente', 'Dados do cliente editados', $id);
             flash(implode(' ', $msgs), $type);
         } elseif ($c) {
@@ -69,9 +73,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     flash($info, $ok ? 'ok' : 'bad');
                     break;
                 case 'manual_pay':
-                    $amt = parse_money((string) ($_POST['amount'] ?? '')) ?: (int) $c['price_cents'];
-                    apply_payment($c, $amt, 'manual', null, today(), null, clean_text($_POST['note'] ?? '', 190) ?: 'registrado no painel');
-                    flash('Pagamento registrado. Próximo vencimento atualizado.');
+                    $amt = parse_money((string) ($_POST['amount'] ?? '')) ?: cycle_amount($c);
+                    $pm = (int) ($_POST['months'] ?? cycle_months($c)); if (!isset(CYCLES[$pm])) $pm = cycle_months($c);
+                    apply_payment($c, $amt, 'manual', null, today(), null, clean_text($_POST['note'] ?? '', 190) ?: 'registrado no painel', true, $pm);
+                    flash('Pagamento registrado. Vencimento avançou ' . $pm . ($pm > 1 ? ' meses.' : ' mês.'));
                     break;
                 case 'suspend':
                     suspend_customer($c, 'suspenso manualmente', false);
@@ -119,7 +124,7 @@ page_start($title, 'clientes', $admin);
 <header class="head">
   <div><?= back_link('clientes.php', 'Clientes') ?>
     <div class="who who--xl"><?= $c ? avatar($c['name'], 'av--xl') : '<span class="chip chip--g" style="width:56px;height:56px;border-radius:18px">' . ic('plus') . '</span>' ?><span><h1><?= h($title) ?></h1>
-      <small><?= $c ? badge($c['status']) . ' <span>' . h($c['plan_name']) . ' · ' . h(money((int) $c['price_cents'])) . '/mês' . ($c['business'] ? ' · ' . h($c['business']) : '') . '</span>' : 'Cadastre um cliente que fechou fora da página.' ?></small></span></div>
+      <small><?= $c ? badge($c['status']) . ' <span>' . h($c['plan_name']) . ' · ' . h(cycle_name($c)) . ' · ' . h(cycle_label($c, false)) . ($c['business'] ? ' · ' . h($c['business']) : '') . '</span>' : 'Cadastre um cliente que fechou fora da página.' ?></small></span></div>
   </div>
   <?php if ($c): ?><div class="actions">
     <a class="btn" href="mailto:<?= h($c['email']) ?>"><?= ic('mail') ?><span>E-mail</span></a>
@@ -132,6 +137,7 @@ page_start($title, 'clientes', $admin);
     <?= card_head('Assinatura', 'card') ?>
     <dl class="kv">
       <dt>Plano</dt><dd><?= h($c['plan_name']) ?> · <?= h(money((int) $c['price_cents'])) ?>/mês</dd>
+      <dt>Período</dt><dd><?= h(cycle_name($c)) ?><?= cycle_months($c) > 1 ? ' · ' . h(cycle_label($c)) : '' ?></dd>
       <dt>Próx. vencimento</dt><dd><?= $c['next_due_date'] ? h(fmt_date($c['next_due_date'])) . ($d !== null ? ' <span class="muted">(' . ($d > 0 ? "em $d dia(s)" : ($d === 0 ? 'hoje' : 'atrasado ' . (-$d) . ' dia(s)')) . ')</span>' : '') : '—' ?></dd>
       <dt>Cliente desde</dt><dd><?= h(fmt_date($c['started_at'])) ?></dd>
       <dt>Cobrança</dt><dd><?= has_card_auto($c) ? 'Cartão, automática' : ($c['billing_mode'] === 'manual' ? 'Pix (lembrete todo mês)' : 'ainda não escolheu') ?></dd>
@@ -170,11 +176,13 @@ page_start($title, 'clientes', $admin);
       <form method="post" class="form" style="margin-bottom:18px">
         <?= csrf_field() ?><input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="act" value="manual_pay">
         <p class="lbl" style="margin:0">Registrar pagamento fora do Mercado Pago (Pix, dinheiro...)</p>
-        <div class="row2">
-          <label>Valor <input name="amount" value="<?= h(number_format($c['price_cents'] / 100, 2, ',', '.')) ?>" inputmode="decimal"></label>
+        <div class="row3">
+          <label>Valor <input name="amount" value="<?= h(number_format(cycle_amount($c) / 100, 2, ',', '.')) ?>" inputmode="decimal"></label>
+          <label>Vale por
+            <select name="months"><?php foreach (CYCLES as $m => $nm): ?><option value="<?= $m ?>" <?= $m === cycle_months($c) ? 'selected' : '' ?>><?= $m ?> <?= $m > 1 ? 'meses' : 'mês' ?></option><?php endforeach; ?></select></label>
           <label>Observação <input name="note" maxlength="190" placeholder="Pix, dinheiro..."></label>
         </div>
-        <div><button class="btn btn--primary btn--sm"><?= ic('wallet') ?><span>Registrar pagamento (+1 mês)</span></button></div>
+        <div><button class="btn btn--primary btn--sm"><?= ic('wallet') ?><span>Registrar pagamento</span></button></div>
       </form>
     <?php endif; ?>
 
@@ -210,9 +218,11 @@ page_start($title, 'clientes', $admin);
     <div class="row3">
       <label>Plano
         <select name="plan_id"><?php foreach ($plans as $p): ?><option value="<?= $p['id'] ?>" <?= ($c['plan_id'] ?? 0) == $p['id'] ? 'selected' : '' ?>><?= h($p['name'] . ' · ' . money((int) $p['price_cents'])) ?></option><?php endforeach; ?></select></label>
-      <label>Valor mensal (R$) <input name="price" required inputmode="decimal" value="<?= h(number_format((($c['price_cents'] ?? ($plans[0]['price_cents'] ?? 6700))) / 100, 2, ',', '.')) ?>"></label>
-      <label>Endereço do site <input name="site_url" maxlength="255" placeholder="https://" value="<?= $f('site_url') ?>"></label>
+      <label>Valor mensal cheio (R$) <input name="price" required inputmode="decimal" value="<?= h(number_format((($c['price_cents'] ?? ($plans[0]['price_cents'] ?? 6700))) / 100, 2, ',', '.')) ?>"></label>
+      <label>Período
+        <select name="cycle_months"><?php foreach (CYCLES as $m => $nm): ?><option value="<?= $m ?>" <?= (int) ($c['cycle_months'] ?? 1) === $m ? 'selected' : '' ?>><?= h($nm) ?><?= cycle_discount($m) ? ' (-' . cycle_discount($m) . '%)' : '' ?></option><?php endforeach; ?></select></label>
     </div>
+    <label>Endereço do site <input name="site_url" maxlength="255" placeholder="https://" value="<?= $f('site_url') ?>"></label>
     <label>Anotações <textarea class="plain" name="notes" maxlength="4000"><?= $f('notes') ?></textarea></label>
     <div><button class="btn btn--roxo"><?= ic($c ? 'tick' : 'plus') ?><span><?= $c ? 'Salvar dados' : 'Criar cliente' ?></span></button></div>
   </form>

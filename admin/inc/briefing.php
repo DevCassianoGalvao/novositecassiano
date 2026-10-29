@@ -135,11 +135,12 @@ function briefing_steps(): array
             ['key' => 'nao_quero', 'label' => 'O que você não quer no site', 'type' => 'area'],
         ]],
         ['id' => 'arquivos', 'title' => 'Arquivos', 'intro' => 'Sem logo, eu uso o nome da sua empresa com uma tipografia bem escolhida. Sem fotos próprias, eu uso imagens de banco de alta qualidade.', 'fields' => [
-            ['key' => 'logo', 'label' => 'Logotipo (PNG ou SVG)', 'type' => 'files', 'max' => 3, 'accept' => 'png,svg,jpg,jpeg,webp,ai,eps,pdf', 'unless' => ['sem_logo']],
+            ['key' => 'logo', 'label' => 'Logotipo (PNG ou SVG)', 'type' => 'files', 'max' => 3, 'accept' => 'png,svg,jpg,jpeg,webp,ai,eps,pdf', 'unless' => ['sem_logo', 'arquivos_link']],
             ['key' => 'sem_logo', 'label' => 'Não tenho logo', 'type' => 'check'],
             ['key' => 'fotos', 'label' => 'Fotos da empresa, equipe, produtos ou trabalhos (até 20)', 'type' => 'files', 'max' => 20, 'accept' => 'png,jpg,jpeg,webp,gif'],
             ['key' => 'manual', 'label' => 'Manual de marca, se tiver', 'type' => 'files', 'max' => 3, 'accept' => 'pdf,zip,png,jpg,jpeg,ai,psd,eps'],
             ['key' => 'outros', 'label' => 'Outros arquivos', 'type' => 'files', 'max' => 10, 'accept' => implode(',', BRIEFING_EXT)],
+            ['key' => 'arquivos_link', 'label' => 'Prefere mandar por link?', 'type' => 'area', 'hint' => 'Cole o link do Google Drive, OneDrive, Dropbox ou WeTransfer com os arquivos. Deixe o link aberto para "qualquer pessoa com o link". Útil se os arquivos passarem de 100 MB.'],
         ]],
         ['id' => 'contato', 'title' => 'Contato e redes', 'fields' => [
             ['key' => 'whatsapp_site', 'label' => 'WhatsApp que vai aparecer no site', 'type' => 'tel', 'req' => true],
@@ -390,10 +391,11 @@ function briefing_sections(array $c, array $b, array $files): array
     $estr = $pick(array_merge(['formato', 'copia_arquivo', 'copia_texto', 'secoes'], $secKeys, ['pag1', 'pag2_nome', 'pag2', 'pag3_nome', 'pag3', 'pag4_nome', 'pag4', 'extra_tem', 'extra_qtd']));
 
     $nFotos = count($files['fotos'] ?? []);
-    $arq = [['Logotipo', !empty($files['logo']) ? implode(', ', array_map(fn($r) => $r['orig_name'], $files['logo'])) : (($d['sem_logo'] ?? '') === '1' ? 'Não tem logo' : 'Não enviou')],
+    $arq = [['Logotipo', !empty($files['logo']) ? implode(', ', array_map(fn($r) => $r['orig_name'], $files['logo'])) : (($d['sem_logo'] ?? '') === '1' ? 'Não tem logo' : (trim((string) ($d['arquivos_link'] ?? '')) !== '' ? 'No link abaixo' : 'Não enviou'))],
         ['Fotos', $nFotos ? $nFotos . ' arquivo(s)' : 'Nenhuma']];
     foreach (['manual' => 'Manual de marca', 'outros' => 'Outros arquivos'] as $k => $l) if (!empty($files[$k])) $arq[] = [$l, briefing_value_text($map[$k], $d, $files)];
     if (!empty($files['copia_arquivo'])) $arq[] = ['Copy enviada pelo cliente', briefing_value_text($map['copia_arquivo'], $d, $files)];
+    if (trim((string) ($d['arquivos_link'] ?? '')) !== '') $arq[] = ['Arquivos por link', (string) $d['arquivos_link']];
 
     return array_values(array_filter([
         ['Pedido', array_values(array_filter([

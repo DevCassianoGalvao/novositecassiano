@@ -9,7 +9,8 @@ $admin = require_login();
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 
 /* ---------- números ---------- */
-$mrr = (int) q_val("SELECT COALESCE(SUM(price_cents),0) FROM customers WHERE status IN ('ativo','atraso')");
+$carteira = q_all("SELECT id, plan_id, price_cents, cycle_months, next_due_date FROM customers WHERE status IN ('ativo','atraso')");
+$mrr = array_sum(array_map('monthly_equiv', $carteira)); // receita por mês, já com os descontos dos períodos
 $ativos = (int) q_val("SELECT COUNT(*) FROM customers WHERE status IN ('ativo','atraso')");
 $novosMes = (int) q_val("SELECT COUNT(*) FROM customers WHERE started_at >= DATE_FORMAT(NOW(), '%Y-%m-01')");
 $pend = (int) q_val("SELECT COUNT(*) FROM customers WHERE status = 'pendente'");
@@ -18,7 +19,9 @@ $leads7prev = (int) q_val("SELECT COUNT(*) FROM leads WHERE created_at BETWEEN (
 $leads30 = (int) q_val("SELECT COUNT(*) FROM leads WHERE created_at > (NOW() - INTERVAL 30 DAY)");
 $fech30 = (int) q_val("SELECT COUNT(*) FROM leads WHERE created_at > (NOW() - INTERVAL 30 DAY) AND status = 'fechado'");
 $conv = $leads30 ? (int) round($fech30 / $leads30 * 100) : 0;
-$previsto = (int) q_val("SELECT COALESCE(SUM(price_cents),0) FROM customers WHERE status IN ('ativo','atraso') AND next_due_date <= (CURDATE() + INTERVAL 30 DAY)");
+$previsto = array_sum(array_map('cycle_amount', array_filter($carteira, fn($c) => $c['next_due_date'] && $c['next_due_date'] <= date('Y-m-d', strtotime('+30 day')))));
+$cancelMes = (int) q_val("SELECT COUNT(*) FROM customers WHERE status = 'cancelado' AND canceled_at >= DATE_FORMAT(NOW(), '%Y-%m-01')");
+$anuais = count(array_filter($carteira, fn($c) => (int) $c['cycle_months'] > 1));
 
 /* receita recebida por mês (últimos 6) */
 $serie = [];
@@ -51,7 +54,9 @@ foreach (q_all('SELECT status, COUNT(*) n FROM leads GROUP BY status') as $r) $f
 $funilMax = max(1, max($funil));
 $leadsTot = array_sum($funil);
 
-$planos = q_all("SELECT p.name, p.slug, COUNT(c.id) n, COALESCE(SUM(c.price_cents),0) v FROM plans p LEFT JOIN customers c ON c.plan_id = p.id AND c.status IN ('ativo','atraso') GROUP BY p.id ORDER BY p.price_cents");
+$planos = q_all("SELECT p.id, p.name, p.slug, COUNT(c.id) n FROM plans p LEFT JOIN customers c ON c.plan_id = p.id AND c.status IN ('ativo','atraso') GROUP BY p.id ORDER BY p.price_cents");
+foreach ($planos as &$pl) $pl['v'] = array_sum(array_map('monthly_equiv', array_filter($carteira, fn($c) => (int) $c['plan_id'] === (int) $pl['id'])));
+unset($pl);
 
 $todo = [];
 if (!mp_connected()) $todo[] = ['Conectar o Mercado Pago', 'configuracoes.php#mp'];
@@ -80,7 +85,7 @@ function nice_max(int $v): int
     foreach ([1, 2, 2.5, 5, 10] as $s) if ($s * $mag >= $m) return (int) ($s * $mag);
     return (int) (10 * $mag);
 }
-$W = 680; $H = 230; $L = 54; $R = 18; $T = 26; $B = 30;
+$W = 940; $H = 330; $L = 54; $R = 18; $T = 26; $B = 30;
 $ymax = nice_max(max($vals));
 $pts = [];
 foreach ($vals as $i => $v) $pts[] = [round($L + $i * ($W - $L - $R) / (count($vals) - 1), 1), round($T + ($H - $T - $B) * (1 - $v / $ymax), 1)];
@@ -124,7 +129,7 @@ page_start('Painel', 'index', $admin);
 
 <div class="dash">
   <!-- receita -->
-  <section class="card rev span-8 rise" aria-labelledby="t-rev">
+  <section class="card rev span-8 rise" aria-labelledby="t-rev" style="display:flex;flex-direction:column">
     <div class="rev__top">
       <div>
         <span class="rev__label" id="t-rev"><span class="chip"><?= ic('wallet') ?></span>Receita recorrente por mês</span>
@@ -145,7 +150,7 @@ page_start('Painel', 'index', $admin);
         </defs>
         <?php for ($g = 0; $g <= 3; $g++): $y = $T + ($H - $T - $B) * $g / 3; ?>
           <line class="grid-l" x1="<?= $L ?>" x2="<?= $W - $R ?>" y1="<?= $y ?>" y2="<?= $y ?>"/>
-          <text class="ax" x="<?= $L - 10 ?>" y="<?= $y + 4 ?>" text-anchor="end"><?php $yv = $ymax * (3 - $g) / 3 / 100; echo h($yv >= 1000 ? number_format($yv / 1000, 1, ',', '') . 'k' : (string) (int) round($yv)); ?></text>
+          <text class="ax" x="<?= $L - 10 ?>" y="<?= $y + 4 ?>" text-anchor="end"><?php $yv = $ymax * (3 - $g) / 3 / 100; echo h($yv >= 1000 ? number_format($yv / 1000, 1, ',', '') . 'k' : ($yv < 10 && $yv > 0 ? number_format($yv, 2, ',', '') : (string) (int) round($yv))); ?></text>
         <?php endfor; ?>
         <path class="area" d="<?= $area ?>"/>
         <path class="line" d="<?= $line ?>"/>
@@ -159,10 +164,19 @@ page_start('Painel', 'index', $admin);
         <?php endforeach; ?>
       </svg>
     </div>
+    <?php
+    $ticket = $ativos ? (int) round($mrr / $ativos) : 0;
+    $best = max($vals); $bestK = array_search($best, $vals, true);
+    $ano = (int) q_val("SELECT COALESCE(SUM(amount_cents),0) FROM payments WHERE status = 'pago' AND COALESCE(paid_at, created_at) >= DATE_FORMAT(NOW(), '%Y-01-01')"); ?>
+    <div class="rev__foot">
+      <div><span>Ticket médio por mês</span><b><?= h(money($ticket)) ?></b></div>
+      <div><span>Melhor mês</span><b><?= $best ? h(money($best)) . ' <small>' . MESES[(int) substr($mk[$bestK], 5, 2) - 1] . '</small>' : '—' ?></b></div>
+      <div><span>Recebido em <?= date('Y') ?></span><b><?= h(money($ano)) ?></b></div>
+    </div>
   </section>
 
   <!-- hoje -->
-  <section class="card span-4 rise" aria-labelledby="t-hoje">
+  <section class="card today-card span-4 rise" aria-labelledby="t-hoje">
     <?= card_head('Pra fazer hoje', 'zap', '', 'g') ?>
     <?php
     $tasks = array_filter([
@@ -181,6 +195,20 @@ page_start('Painel', 'index', $admin);
       <?php endforeach; ?>
       </div>
     <?php endif; ?>
+    <div class="month">
+      <p class="month__t">Neste mês</p>
+      <div class="month__g">
+        <div><b><?= h(money($esteMes)) ?></b><span>recebido</span></div>
+        <div><b><?= $novosMes ?></b><span>novo<?= $novosMes === 1 ? '' : 's' ?> cliente<?= $novosMes === 1 ? '' : 's' ?></span></div>
+        <div><b><?= $cancelMes ?></b><span>cancelamento<?= $cancelMes === 1 ? '' : 's' ?></span></div>
+        <div><b><?= $anuais ?></b><span>no trimestral, semestral ou anual</span></div>
+      </div>
+      <div class="month__a">
+        <input id="salesUrl" type="hidden" value="<?= h(app_url() . '/site-por-assinatura/') ?>">
+        <button type="button" class="btn btn--sm" data-copy="salesUrl"><?= ic('link') ?><span>Copiar link da página</span></button>
+        <a class="btn btn--sm" href="configuracoes.php#regras"><?= ic('shield') ?><span>Regras</span></a>
+      </div>
+    </div>
   </section>
 
   <!-- indicadores -->

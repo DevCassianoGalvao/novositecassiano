@@ -31,6 +31,56 @@ function customer_by_token(string $t): ?array
     return $r ? customer_find((int) $r['id']) : null;
 }
 
+/* ---------- Períodos (mensal, trimestral, semestral, anual) ---------- */
+
+const CYCLES = [1 => 'Mensal', 3 => 'Trimestral', 6 => 'Semestral', 12 => 'Anual'];
+
+function cycle_months(array $c): int
+{
+    $m = (int) ($c['cycle_months'] ?? 1);
+    return isset(CYCLES[$m]) ? $m : 1;
+}
+
+/** Desconto (%) por pagar o período à vista. */
+function cycle_discount(int $months): int
+{
+    if ($months <= 1) return 0;
+    $def = [3 => 10, 6 => 15, 12 => 20][$months] ?? 0;
+    $v = (int) setting('disc_' . $months, (string) $def);
+    return max(0, min(60, $v));
+}
+
+/** Valor de um período inteiro, em centavos, já com desconto. */
+function period_amount(int $monthlyCents, int $months): int
+{
+    return (int) round($monthlyCents * $months * (100 - cycle_discount($months)) / 100);
+}
+
+function cycle_amount(array $c): int
+{
+    return period_amount((int) $c['price_cents'], cycle_months($c));
+}
+
+/** Quanto o período equivale por mês (para receita mensal). */
+function monthly_equiv(array $c): int
+{
+    return (int) round(cycle_amount($c) / cycle_months($c));
+}
+
+/** "R$ 67,00 por mês" ou "R$ 643,20 por ano (equivale a R$ 53,60/mês)". */
+function cycle_label(array $c, bool $long = true): string
+{
+    $m = cycle_months($c);
+    if ($m === 1) return money(cycle_amount($c)) . ' por mês';
+    $per = [3 => 'a cada 3 meses', 6 => 'a cada 6 meses', 12 => 'por ano'][$m];
+    return money(cycle_amount($c)) . ' ' . $per . ($long ? ' (equivale a ' . money(monthly_equiv($c)) . '/mês)' : '');
+}
+
+function cycle_name(array $c): string
+{
+    return CYCLES[cycle_months($c)];
+}
+
 function pay_url(array $c): string
 {
     return app_url() . '/site-por-assinatura/pagar/?t=' . $c['portal_token'];
@@ -102,7 +152,8 @@ function customer_url(int $id): string
 function email_content(string $kind, array $c, array $v = []): array
 {
     $first = h(first_name($c['name']));
-    $price = h(money((int) $c['price_cents']));
+    $price = h(money(cycle_amount($c)));
+    $periodo = h(cycle_label($c));
     $plan = h($c['plan_name'] ?? 'Plano');
     $due = h(fmt_date($c['next_due_date'] ?? null));
     $wa = wa_link(admin_wa(), 'Oi, Cassiano! Sou ' . $c['name'] . ', sobre minha assinatura do site.');
@@ -114,7 +165,7 @@ function email_content(string $kind, array $c, array $v = []): array
     switch ($kind) {
         case 'link':
             return ['Sua assinatura do site está pronta para ativar',
-                $p("Oi, $first!") . $p("Falta só um passo: escolher como pagar a assinatura do <b>$plan</b> ($price por mês).") . $p('Você pode pagar com <b>Pix</b> (QR Code, confirmação na hora) ou com <b>cartão de crédito</b> (cobrança automática todo mês).') . $p('Se tiver qualquer dúvida, é só me chamar no WhatsApp.'),
+                $p("Oi, $first!") . $p("Falta só um passo: escolher como pagar a assinatura do <b>$plan</b> ($periodo).") . $p('Você pode pagar com <b>Pix</b> (QR Code, confirmação na hora) ou com <b>cartão de crédito</b> (cobrança automática a cada período).') . $p('Se tiver qualquer dúvida, é só me chamar no WhatsApp.'),
                 ['label' => 'Escolher como pagar', 'url' => $pay]];
         case 'welcome':
             return ['Assinatura confirmada!',
@@ -132,7 +183,7 @@ function email_content(string $kind, array $c, array $v = []): array
                     $ctaWa];
             }
             return ["Sua mensalidade $quando",
-                $p("Oi, $first!") . $p("A mensalidade de <b>$price</b> do seu <b>$plan</b> $quando (<b>$due</b>).") . $p('Para manter o site no ar, é só pagar pelo link: <b>Pix</b> com QR Code (cai na hora) ou <b>cartão</b>, se preferir deixar a cobrança automática.'),
+                $p("Oi, $first!") . $p("O pagamento de <b>$price</b> do seu <b>$plan</b> (" . h(mb_strtolower(cycle_name($c))) . ") $quando (<b>$due</b>).") . $p('Para manter o site no ar, é só pagar pelo link: <b>Pix</b> com QR Code (cai na hora) ou <b>cartão</b>, se preferir deixar a cobrança automática.'),
                 ['label' => 'Pagar agora', 'url' => $pay]];
         case 'atraso':
             $lim = h(fmt_date(date('Y-m-d', strtotime(($c['next_due_date'] ?? today()) . ' +' . tolerance_days() . ' day'))));
@@ -208,7 +259,7 @@ function admin_summary_html(array $c): string
     $row = fn($k, $v) => '<tr><td style="padding:4px 12px 4px 0;color:#7b7590">' . $k . '</td><td style="padding:4px 0"><b>' . $v . '</b></td></tr>';
     return '<table style="font-size:15px;border-collapse:collapse">'
         . $row('Cliente', h($c['name']))
-        . $row('Plano', h(($c['plan_name'] ?? '') . ' · ' . money((int) $c['price_cents'])))
+        . $row('Plano', h(($c['plan_name'] ?? '') . ' · ' . cycle_name($c) . ' · ' . cycle_label($c, false)))
         . $row('WhatsApp', '<a href="' . h(wa_link($c['whatsapp'])) . '">' . h(phone_pretty($c['whatsapp'])) . '</a>')
         . $row('E-mail', h($c['email']))
         . $row('Site', h($c['site_url'] ?: '—'))
@@ -272,7 +323,7 @@ function cancel_customer(array $c, string $why, bool $cancelOnMp = true): string
  * Registra um pagamento recebido e atualiza o cliente.
  * Retorna false se o pagamento já tinha sido registrado (idempotente).
  */
-function apply_payment(array $c, int $amountCents, string $method, ?string $mpRef, ?string $referenceDate, ?string $paidAt = null, ?string $note = null, bool $syncAfter = true): bool
+function apply_payment(array $c, int $amountCents, string $method, ?string $mpRef, ?string $referenceDate, ?string $paidAt = null, ?string $note = null, bool $syncAfter = true, ?int $months = null): bool
 {
     $c = customer_find((int) $c['id']) ?? $c;
     $paidAt = $paidAt ?: date('Y-m-d H:i:s');
@@ -294,7 +345,8 @@ function apply_payment(array $c, int $amountCents, string $method, ?string $mpRe
     $prev = $c['status'];
     $due = $c['next_due_date'];
     $base = ($due && $due >= today()) ? $due : today();
-    $fields = ['next_due_date' => add_months($base, 1), 'status' => 'ativo', 'suspended_at' => null];
+    $months = $months && $months > 0 ? $months : cycle_months($c);
+    $fields = ['next_due_date' => add_months($base, $months), 'status' => 'ativo', 'suspended_at' => null];
     if (empty($c['started_at'])) $fields['started_at'] = 'NOW()';
     if ($method === 'pix' && !has_card_auto($c)) $fields['billing_mode'] = 'manual';
     customer_update((int) $c['id'], $fields);
@@ -359,7 +411,7 @@ function mp_sync_customer(array $c): array
     $qty = (int) ($sum['charged_quantity'] ?? 0);
     if ($qty > (int) $c['mp_charged_qty']) {
         customer_update($id, ['mp_charged_qty' => $qty]);
-        $amount = (int) round(((float) ($sum['last_charged_amount'] ?? ((int) $c['price_cents'] / 100))) * 100);
+        $amount = (int) round(((float) ($sum['last_charged_amount'] ?? (cycle_amount($c) / 100))) * 100);
         $paidAt = !empty($sum['last_charged_date']) ? date('Y-m-d H:i:s', (int) strtotime((string) $sum['last_charged_date'])) : null;
         apply_payment(customer_find($id), $amount, 'mercadopago', 'pq_' . $c['mp_preapproval_id'] . '_' . $qty, mp_date_br($sum['last_charged_date'] ?? null), $paidAt, null, false);
     }
@@ -386,7 +438,7 @@ function mp_handle_authorized_payment(string $apId): string
     if (!$c) return 'cliente não encontrado';
     $payStatus = (string) ($b['payment']['status'] ?? '');
     $apStatus = (string) ($b['status'] ?? '');
-    $amount = (int) round(((float) ($b['transaction_amount'] ?? ((int) $c['price_cents'] / 100))) * 100);
+    $amount = (int) round(((float) ($b['transaction_amount'] ?? (cycle_amount($c) / 100))) * 100);
     $refDate = mp_date_br($b['debit_date'] ?? null);
 
     if ($payStatus === 'approved' || ($apStatus === 'processed' && $payStatus === '')) {
@@ -489,22 +541,23 @@ function run_daily(): array
 function pix_for_customer(array $c): array
 {
     $ex = q_one("SELECT * FROM pix_charges WHERE customer_id = ? AND status = 'pendente' AND expires_at > (NOW() + INTERVAL 10 MINUTE) ORDER BY id DESC LIMIT 1", [(int) $c['id']]);
-    if ($ex && (int) $ex['amount_cents'] === (int) $c['price_cents']) return [true, $ex];
+    $amt = cycle_amount($c);
+    if ($ex && (int) $ex['amount_cents'] === $amt) return [true, $ex];
     // o valor mudou desde que o QR foi gerado: cancela o antigo para ninguém pagar o valor errado
-    foreach (q_all("SELECT * FROM pix_charges WHERE customer_id = ? AND status = 'pendente' AND amount_cents <> ?", [(int) $c['id'], (int) $c['price_cents']]) as $old) {
+    foreach (q_all("SELECT * FROM pix_charges WHERE customer_id = ? AND status = 'pendente' AND amount_cents <> ?", [(int) $c['id'], $amt]) as $old) {
         mp_cancel_payment((string) $old['mp_payment_id']);
         q("UPDATE pix_charges SET status = 'expirado' WHERE id = ?", [(int) $old['id']]);
     }
-    if ($ex && (int) $ex['amount_cents'] !== (int) $c['price_cents']) $ex = null;
-    $r = mp_create_pix($c, (int) $c['price_cents'], 'Site por assinatura · ' . $c['plan_name']);
+    if ($ex && (int) $ex['amount_cents'] !== $amt) $ex = null;
+    $r = mp_create_pix($c, $amt, 'Site por assinatura · ' . $c['plan_name'] . (cycle_months($c) > 1 ? ' · ' . cycle_name($c) : ''));
     $b = $r['body'];
     $td = $b['point_of_interaction']['transaction_data'] ?? [];
     if ($r['error'] !== '' || empty($b['id']) || empty($td['qr_code'])) return [false, $r['error'] !== '' ? $r['error'] : 'O Mercado Pago não devolveu o QR Code.'];
     $exp = !empty($b['date_of_expiration']) ? date('Y-m-d H:i:s', (int) strtotime((string) $b['date_of_expiration'])) : date('Y-m-d H:i:s', strtotime('+1 day'));
     q('INSERT INTO pix_charges (customer_id, mp_payment_id, amount_cents, qr_code, qr_base64, status, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())',
-        [(int) $c['id'], (string) $b['id'], (int) $c['price_cents'], (string) $td['qr_code'], (string) ($td['qr_code_base64'] ?? ''), 'pendente', $exp]);
+        [(int) $c['id'], (string) $b['id'], $amt, (string) $td['qr_code'], (string) ($td['qr_code_base64'] ?? ''), 'pendente', $exp]);
     $newId = (int) db()->lastInsertId();
-    log_activity('pix', 'QR Code Pix gerado (' . money((int) $c['price_cents']) . ')', (int) $c['id']);
+    log_activity('pix', 'QR Code Pix gerado (' . money($amt) . ', ' . mb_strtolower(cycle_name($c)) . ')', (int) $c['id']);
     return [true, q_one('SELECT * FROM pix_charges WHERE id = ?', [$newId])];
 }
 
@@ -524,7 +577,7 @@ function pix_settle(string $mpPaymentId): string
 
     if ($status === 'approved') {
         $paidAt = !empty($b['date_approved']) ? date('Y-m-d H:i:s', (int) strtotime((string) $b['date_approved'])) : null;
-        $amount = (int) round(((float) ($b['transaction_amount'] ?? ((int) $c['price_cents'] / 100))) * 100);
+        $amount = (int) round(((float) ($b['transaction_amount'] ?? (cycle_amount($c) / 100))) * 100);
         $new = apply_payment($c, $amount, 'pix', 'pay_' . $mpPaymentId, today(), $paidAt);
         q("UPDATE pix_charges SET status = 'pago' WHERE mp_payment_id = ?", [$mpPaymentId]);
         return $new ? 'pix pago e registrado' : 'pix já registrado';

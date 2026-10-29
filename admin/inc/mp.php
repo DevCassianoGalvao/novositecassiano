@@ -64,13 +64,13 @@ function mp_is_test_token(string $t): bool
 function mp_create_preapproval(array $customer, string $planName, ?string $startDate = null): array
 {
     $body = [
-        'reason'             => 'Site por assinatura · ' . $planName,
+        'reason'             => 'Site por assinatura · ' . $planName . (cycle_months($customer) > 1 ? ' · ' . cycle_name($customer) : ''),
         'external_reference' => 'c' . $customer['id'],
         'payer_email'        => $customer['email'],
         'auto_recurring'     => [
-            'frequency'          => 1,
+            'frequency'          => cycle_months($customer),
             'frequency_type'     => 'months',
-            'transaction_amount' => round(((int) $customer['price_cents']) / 100, 2),
+            'transaction_amount' => round(cycle_amount($customer) / 100, 2),
             'currency_id'        => 'BRL',
         ],
         'back_url'           => app_url() . '/site-por-assinatura/obrigado/',
