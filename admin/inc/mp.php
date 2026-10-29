@@ -150,3 +150,9 @@ function mp_get_payment(string $id): array
 {
     return mp_request('GET', '/v1/payments/' . rawurlencode($id));
 }
+
+/** Cancela uma cobrança Pix ainda não paga (melhor esforço). */
+function mp_cancel_payment(string $id): array
+{
+    return mp_request('PUT', '/v1/payments/' . rawurlencode($id), ['status' => 'cancelled']);
+}

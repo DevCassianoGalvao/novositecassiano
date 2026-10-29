@@ -476,7 +476,13 @@ function run_daily(): array
 function pix_for_customer(array $c): array
 {
     $ex = q_one("SELECT * FROM pix_charges WHERE customer_id = ? AND status = 'pendente' AND expires_at > (NOW() + INTERVAL 10 MINUTE) ORDER BY id DESC LIMIT 1", [(int) $c['id']]);
-    if ($ex) return [true, $ex];
+    if ($ex && (int) $ex['amount_cents'] === (int) $c['price_cents']) return [true, $ex];
+    // o valor mudou desde que o QR foi gerado: cancela o antigo para ninguém pagar o valor errado
+    foreach (q_all("SELECT * FROM pix_charges WHERE customer_id = ? AND status = 'pendente' AND amount_cents <> ?", [(int) $c['id'], (int) $c['price_cents']]) as $old) {
+        mp_cancel_payment((string) $old['mp_payment_id']);
+        q("UPDATE pix_charges SET status = 'expirado' WHERE id = ?", [(int) $old['id']]);
+    }
+    if ($ex && (int) $ex['amount_cents'] !== (int) $c['price_cents']) $ex = null;
     $r = mp_create_pix($c, (int) $c['price_cents'], 'Site por assinatura · ' . $c['plan_name']);
     $b = $r['body'];
     $td = $b['point_of_interaction']['transaction_data'] ?? [];
