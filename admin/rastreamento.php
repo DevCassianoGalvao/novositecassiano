@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         setting_set('tags_body', '');
         setting_set('tags_enabled', '1');
         setting_set('tags_configured', '1');
-        flash('Voltou para o Pixel padrão (987681871022914).');
+        flash('Tags apagadas. A página fica sem Pixel até você colar um novo.');
     } else {
         setting_set('tags_head', mb_substr((string) ($_POST['head'] ?? ''), 0, 30000));
         setting_set('tags_body', mb_substr((string) ($_POST['body'] ?? ''), 0, 30000));
@@ -32,7 +32,7 @@ page_start('Rastreamento', 'rastreamento', $admin);
 <?php page_head('Rastreamento', 'Pixel da Meta, Google Tag Manager e outras tags. Valem só nas páginas do site por assinatura.'); ?>
 
 <?php if (!$cfg['configured']): ?>
-  <p class="aviso aviso--warn"><?= ic('alert') ?><span>Você ainda não salvou nada aqui. Enquanto isso, a página continua usando o Pixel padrão da Meta (987681871022914), que aparece abaixo. Ao salvar, o que estiver nas caixas passa a valer.</span></p>
+  <p class="aviso aviso--warn"><?= ic('alert') ?><span>Nenhuma tag configurada: as páginas do site por assinatura estão <b>sem Pixel</b>. Cole abaixo o código do seu Pixel novo (ou do Tag Manager) e salve.</span></p>
 <?php endif; ?>
 
 <form method="post" class="card form">
@@ -59,6 +59,6 @@ page_start('Rastreamento', 'rastreamento', $admin);
     <li>Quem usa o Tag Manager recebe os mesmos eventos na <code>dataLayer</code> (<code>Lead</code>, <code>ViewContent</code>, <code>Contact</code>).</li>
     <li>Se você colar um Pixel novo, remova o antigo da caixa para não contar a visita duas vezes.</li>
   </ul>
-  <form method="post" data-confirm="Voltar para o Pixel padrão e apagar o que está nas caixas?" style="margin-top:14px"><?= csrf_field() ?><input type="hidden" name="act" value="reset"><button class="btn btn--sm"><?= ic('refresh') ?><span>Restaurar o Pixel padrão</span></button></form>
+  <form method="post" data-confirm="Apagar o que está nas caixas? A página fica sem Pixel." style="margin-top:14px"><?= csrf_field() ?><input type="hidden" name="act" value="reset"><button class="btn btn--sm btn--danger"><?= ic('trash') ?><span>Apagar todas as tags</span></button></form>
 </div>
 <?php page_end();
