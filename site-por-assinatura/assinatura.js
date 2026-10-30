@@ -331,7 +331,7 @@
   var plansSec = $('#planos');
   if (plansSec && 'IntersectionObserver' in window) {
     var vcIO = new IntersectionObserver(function (es) {
-      if (es[0].isIntersecting) { track('ViewContent', { content_name: 'Planos · site por assinatura', currency: 'BRL', value: 67 }); vcIO.disconnect(); }
+      if (es[0].isIntersecting) { track('ViewContent', { content_name: 'Planos' }); vcIO.disconnect(); }
     }, { threshold: 0.3 });
     vcIO.observe(plansSec);
   }
@@ -491,7 +491,7 @@
     };
     Object.keys(UTM).forEach(function (k) { payload[k] = UTM[k]; });
 
-    track('Lead', { content_name: 'Plano ' + PLANS[chosen].nome + ' ' + CYC[cycle], currency: 'BRL', value: total(PLANS[chosen].preco, cycle) });
+    track('Lead', { content_name: PLANS[chosen].nome });
 
     // O lead é gravado no banco (painel /admin) e avisado por e-mail pelo api/assinatura.php.
     submitBtn.classList.add('is-loading');
@@ -512,7 +512,7 @@
       clearTimeout(timer);
       // lead salvo: segue para a página de pagamento (Pix ou cartão)
       if (d && d.ok && d.pay_url && /^https?:\/\//.test(d.pay_url)) {
-        track('InitiateCheckout', { content_name: 'Plano ' + PLANS[chosen].nome + ' ' + CYC[cycle], currency: 'BRL', value: total(PLANS[chosen].preco, cycle) });
+        track('InitiateCheckout', { value: total(PLANS[chosen].preco, cycle), currency: 'BRL' });
         $('.btn__label', submitBtn).textContent = 'Abrindo o pagamento...';
         setTimeout(function () { location.href = d.pay_url; }, 250);
         return;

@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         setting_set('tags_body', '');
         setting_set('tags_enabled', '1');
         setting_set('tags_configured', '1');
-        flash('Tags apagadas. A página fica sem Pixel até você colar um novo.');
+        flash('Voltou para o Pixel padrão (1865202664841697).');
     } else {
         setting_set('tags_head', mb_substr((string) ($_POST['head'] ?? ''), 0, 30000));
         setting_set('tags_body', mb_substr((string) ($_POST['body'] ?? ''), 0, 30000));
@@ -32,7 +32,7 @@ page_start('Rastreamento', 'rastreamento', $admin);
 <?php page_head('Rastreamento', 'Pixel da Meta, Google Tag Manager e outras tags. Valem só nas páginas do site por assinatura.'); ?>
 
 <?php if (!$cfg['configured']): ?>
-  <p class="aviso aviso--warn"><?= ic('alert') ?><span>Nenhuma tag configurada: as páginas do site por assinatura estão <b>sem Pixel</b>. Cole abaixo o código do seu Pixel novo (ou do Tag Manager) e salve.</span></p>
+  <p class="aviso aviso--ok"><?= ic('check') ?><span>Usando o Pixel padrão da Meta (<b>1865202664841697</b>), que aparece abaixo. Se salvar outra coisa nas caixas, passa a valer o que você salvou.</span></p>
 <?php endif; ?>
 
 <form method="post" class="card form">
@@ -55,10 +55,10 @@ page_start('Rastreamento', 'rastreamento', $admin);
     <li>As tags valem na página <code>/site-por-assinatura/</code>, na de obrigado e nas páginas de pagamento e de briefing do cliente. A home e o resto do site não mudam.</li>
     <li>Nas páginas de pagamento e de briefing, o link pessoal do cliente é tirado do endereço antes das tags carregarem, para não ir para a Meta ou o Google.</li>
     <li>Pode colar mais de uma tag (Pixel + Tag Manager + o que precisar). Cole o código inteiro, com <code>&lt;script&gt;</code>.</li>
-    <li>A página já dispara os eventos <b>PageView</b>, <b>ViewContent</b> (chegou nos planos), <b>Lead</b> (enviou o formulário do plano), <b>InitiateCheckout</b> (foi para o pagamento), <b>Purchase</b> (Pix confirmado) e <b>Contact</b> (clicou no WhatsApp). Pelo Pixel eles funcionam sozinhos.</li>
+    <li>Os eventos do funil disparam sozinhos: <b>PageView</b> (todas as páginas), <b>ViewContent</b> (a seção de planos apareceu na tela), <b>Lead</b> (enviou nome, WhatsApp e e-mail no pop-up), <b>InitiateCheckout</b> (antes de ir para o pagamento), <b>Purchase</b> (abriu o briefing depois do pagamento aprovado, uma vez por pedido) e <b>Contact</b> (clicou no WhatsApp).</li>
     <li>Quem usa o Tag Manager recebe os mesmos eventos na <code>dataLayer</code> (<code>Lead</code>, <code>ViewContent</code>, <code>Contact</code>).</li>
     <li>Se você colar um Pixel novo, remova o antigo da caixa para não contar a visita duas vezes.</li>
   </ul>
-  <form method="post" data-confirm="Apagar o que está nas caixas? A página fica sem Pixel." style="margin-top:14px"><?= csrf_field() ?><input type="hidden" name="act" value="reset"><button class="btn btn--sm btn--danger"><?= ic('trash') ?><span>Apagar todas as tags</span></button></form>
+  <form method="post" data-confirm="Voltar para o Pixel padrão (1865202664841697) e apagar o que está nas caixas?" style="margin-top:14px"><?= csrf_field() ?><input type="hidden" name="act" value="reset"><button class="btn btn--sm"><?= ic('refresh') ?><span>Restaurar o Pixel padrão</span></button></form>
 </div>
 <?php page_end();

@@ -118,7 +118,14 @@ if ($open && !$fatal) {
         if ($d['plano'] !== 'completo') $d['formato'] = 'onepage';
         $files = [];
         foreach (briefing_files((int) $c['id']) as $k => $rows) $files[$k] = array_map(fn($r) => ['id' => (int) $r['id'], 'name' => $r['orig_name'], 'size' => briefing_size((int) $r['size_bytes'])], $rows);
+        // Purchase do Pixel: uma vez por pedido, na primeira abertura do briefing depois do pagamento
+        $purchase = null;
+        $paid = q_one("SELECT amount_cents FROM payments WHERE customer_id = ? AND status = 'pago' ORDER BY COALESCE(paid_at, created_at) LIMIT 1", [(int) $c['id']]);
+        if ($paid && q("INSERT IGNORE INTO notifications (customer_id, kind, ref_date, to_email, ok, created_at) VALUES (?, 'px_purchase', '1970-01-01', '', 1, NOW())", [(int) $c['id']])->rowCount() === 1) {
+            $purchase = round((int) $paid['amount_cents'] / 100, 2);
+        }
         $boot = [
+            'purchase' => $purchase,
             't' => $c['portal_token'], 'steps' => briefing_steps(), 'data' => (object) $d, 'files' => (object) $files,
             'step' => $b ? max(1, (int) $b['step']) : 1, 'submitted' => $b && $b['status'] === 'enviado',
             'planoNome' => $c['plan_name'], 'wa' => $wa, 'pay' => pay_url($c),
@@ -498,6 +505,10 @@ client_head('Briefing do seu site', '&family=Cormorant+Garamond:wght@500;600&fam
 
   function render(keep){var y=window.scrollY;app.innerHTML='';app.appendChild(done?doneView():stepView());if(keep)window.scrollTo(0,y)}
   render();
+  if(B.purchase){
+    try{window.dataLayer=window.dataLayer||[];window.dataLayer.push({event:'Purchase',value:B.purchase,currency:'BRL'})}catch(e){}
+    var pt=0,pi=setInterval(function(){if(window.fbq){clearInterval(pi);try{window.fbq('track','Purchase',{value:B.purchase,currency:'BRL'})}catch(e){}}else if(++pt>60)clearInterval(pi)},250);
+  }
 })();
 </script>
 <script defer src="/api/tags.php"></script>

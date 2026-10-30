@@ -3,10 +3,25 @@
 
 declare(strict_types=1);
 
-/** Sem tag padrão: o Pixel/GTM da página é o que você colar no painel (Rastreamento). */
+/** Pixel padrão das páginas do site por assinatura (o que estiver salvo no painel tem prioridade). */
 function default_tags_head(): string
 {
-    return '';
+    return <<<'HTML'
+<!-- Meta Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '1865202664841697');
+fbq('track', 'PageView');
+</script>
+<!-- End Meta Pixel Code -->
+HTML;
 }
 
 /** @return array{head:string, body:string, enabled:bool, configured:bool} */

@@ -277,8 +277,7 @@ client_head('Sua assinatura');
     var it=document.getElementById('intro');if(it)it.textContent='Pagamento confirmado. Agora é só me contar sobre o seu negócio.';
     box.scrollIntoView({behavior:'smooth',block:'center'});
     var v=parseFloat(box.getAttribute('data-value'))||0;
-    try{window.dataLayer=window.dataLayer||[];window.dataLayer.push({event:'Purchase',value:v,currency:'BRL'})}catch(e){}
-    try{if(window.fbq)window.fbq('track','Purchase',{value:v,currency:'BRL'})}catch(e){}
+    try{window.dataLayer=window.dataLayer||[];window.dataLayer.push({event:'pix_pago',value:v,currency:'BRL'})}catch(e){}
   }
   function poll(){
     if(stop||tries++>360)return;
