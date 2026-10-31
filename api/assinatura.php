@@ -76,7 +76,16 @@ foreach (['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term']
     if (!empty($data[$k])) $utm[$k] = $clean($data[$k], 200);
 }
 
-if (mb_strlen($nome) < 2 || !preg_match('/^\d{10,13}$/', $whatsapp) || !filter_var($email, FILTER_VALIDATE_EMAIL) || !isset($planos[$plano])) {
+// Mesma regra do front: 11 dígitos (DDD 11-99 + 9 + 8), sem repetidos; e-mail real, sem domínio de teste.
+$waOk = preg_match('/^\d{11}$/', $whatsapp)
+    && $whatsapp[2] === '9'
+    && (int) substr($whatsapp, 0, 2) >= 11
+    && !preg_match('/^(\d)\1+$/', substr($whatsapp, 2))
+    && !preg_match('/(\d)\1{6,}/', $whatsapp);
+$mailOk = preg_match('/^[^\s@]{2,}@[^\s@]+\.[a-z]{2,}$/i', $email)
+    && !preg_match('/@(teste|test|example)\./i', $email)
+    && filter_var($email, FILTER_VALIDATE_EMAIL);
+if (mb_strlen($nome) < 2 || !$waOk || !$mailOk || !isset($planos[$plano])) {
     respond(422, ['ok' => false, 'error' => 'Dados inválidos.']);
 }
 

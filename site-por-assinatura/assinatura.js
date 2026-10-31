@@ -466,6 +466,20 @@
     return '(' + d.slice(0, 2) + ') ' + d.slice(2, 7) + '-' + d.slice(7);
   };
   fWhats.addEventListener('input', function () { fWhats.value = mask(fWhats.value); });
+  // Mesma regra do servidor (api/assinatura.php): barra dados de teste antes de disparar o Lead.
+  function whatsappValido(v) {
+    var n = v.replace(/\D/g, '');
+    if (n.length !== 11) return false;
+    if (n[2] !== '9') return false;
+    var ddd = +n.slice(0, 2);
+    if (ddd < 11 || ddd > 99) return false;
+    if (/^(\d)\1+$/.test(n.slice(2))) return false;
+    if (/(\d)\1{6,}/.test(n)) return false;
+    return true;
+  }
+  function emailValido(e) {
+    return /^[^\s@]{2,}@[^\s@]+\.[a-z]{2,}$/i.test(e) && !/@(teste|test|example)\./i.test(e);
+  }
   var setErr = function (input, bad) { input.closest('.field').classList.toggle('is-invalid', bad); input.setAttribute('aria-invalid', bad ? 'true' : 'false'); return bad; };
   [fNome, fWhats, fEmail].forEach(function (el) {
     el.addEventListener('input', function () { setErr(el, false); });
@@ -475,8 +489,8 @@
     e.preventDefault();
     var bad = [
       setErr(fNome, fNome.value.trim().length < 2),
-      setErr(fWhats, fWhats.value.replace(/\D/g, '').length < 10),
-      setErr(fEmail, !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(fEmail.value.trim()))
+      setErr(fWhats, !whatsappValido(fWhats.value)),
+      setErr(fEmail, !emailValido(fEmail.value.trim()))
     ];
     if (bad.some(Boolean)) { ($('.field.is-invalid input', form) || fNome).focus(); return; }
 
